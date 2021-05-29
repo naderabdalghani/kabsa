@@ -22,7 +22,7 @@
 "function" return FUNCTION;
 "true" return TRUE;
 "false" return FALSE;
-
+"return" return RETURN;
 
 [0-9]+ {
     yylval = atoi(yytext);
