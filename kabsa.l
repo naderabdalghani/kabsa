@@ -15,7 +15,6 @@
 "while" return WHILE;
 "if" return IF;
 "else" return ELSE;
-"print" return PRINT;
 "do" return DO;
 "for" return FOR;
 "switch" return SWITCH;
