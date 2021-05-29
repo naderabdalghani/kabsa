@@ -23,9 +23,6 @@
 "true" return TRUE;
 "false" return FALSE;
 
-\"(\\.|[^"\\])*\" {
-    return STRING;
-}
 
 [0-9]+ {
     yylval = atoi(yytext);
