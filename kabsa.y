@@ -27,9 +27,9 @@
 %%
 
 program
-      : /* Empty program */
-      │ statement program
-      ;
+    : // Empty program
+    | statement program
+    ;
 
 
 statements
