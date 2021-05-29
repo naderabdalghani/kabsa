@@ -1,6 +1,6 @@
 %{
     #include <stdlib.h>
-    #include "y.tab.h"
+    #include "kabsa.tab.h"
     void yyerror(char *);
 %}
 
