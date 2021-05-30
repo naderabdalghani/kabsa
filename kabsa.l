@@ -1,5 +1,6 @@
 %{
     #include <stdlib.h>
+    #include "kabsa.h"
     #include "kabsa.tab.h"
     void yyerror(char *);
 %}
@@ -23,14 +24,16 @@
 "false" return FALSE;
 "return" return RETURN;
 
-[0-9]+ {
-    yylval = atoi(yytext);
-    return INTEGER;
+[+-]?([0-9]*[.])[0-9]+ {
+    yylval.number.float_value = atof(yytext);
+    yylval.number.type = FLOAT_TYPE;
+    return FLOAT;
 }
 
-[+-]?([0-9]*[.])?[0-9]+ {
-    yylval = atof(yytext);
-    return FLOAT;
+[0-9]+ {
+    yylval.number.integer_value = atoi(yytext);
+    yylval.number.type = INTEGER_TYPE;
+    return INTEGER;
 }
 
 [-()<>=+*/;{}.] {
