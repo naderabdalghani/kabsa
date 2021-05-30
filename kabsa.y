@@ -10,7 +10,7 @@
     Number number;
 };
 
-%token CONSTANT WHILE IF ENUM DO FOR SWITCH FUNCTION INTEGER FLOAT TRUE FALSE IDENTIFIER ELSE GE LE EQ NE RETURN
+%token CONSTANT WHILE IF ENUM DO FOR SWITCH FUNCTION INTEGER FLOAT TRUE FALSE IDENTIFIER ELSE GE LE EQ NE RETURN CASE BREAK DEFAULT
 
 %type <number> IDENTIFIER ENUM INTEGER FLOAT TRUE FALSE program statements statement expression boolean_expression identifiers enum_specifier enum_list enumerator
 
@@ -46,6 +46,7 @@ statement
     | FOR '(' expression ';' boolean_expression ';' expression ')' { printf("For Loop"); }
     | FUNCTION IDENTIFIER '(' identifiers ')' '{' statement '}' { printf("Function Declaration") }
     | IDENTIFIER '(' identifiers ')' ';' { printf("Function Call") }
+    | SWITCH '(' expression ')' '{' labeled_statement '}'
     | statements
     ;
 
@@ -141,6 +142,18 @@ expression
             $$.float_value = $2.float_value;
         }
     }
+    ;
+
+labeled_statements
+    : labeled_statement
+    | labeled_statements labeled_statement
+    ;
+
+labeled_statement
+	: CASE expression ':' statement
+    | BREAK ';'
+	| DEFAULT ':' statement
+    | labeled_statements
     ;
 
 enum_specifier

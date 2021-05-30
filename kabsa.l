@@ -23,6 +23,9 @@
 "true" return TRUE;
 "false" return FALSE;
 "return" return RETURN;
+"case" return CASE;
+"break" return BREAK;
+"default" return DEFAULT;
 
 [+-]?([0-9]*[.])[0-9]+ {
     yylval.number.float_value = atof(yytext);
@@ -36,7 +39,7 @@
     return INTEGER;
 }
 
-[-()<>=+*/;{}.] {
+[-()<>=+*/:;{}.] {
     return *yytext;
 }
 
