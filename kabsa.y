@@ -1,22 +1,18 @@
 %{
     #include <stdio.h>
-
+    #include "kabsa.h"
     int yylex(void);
     void yyerror(char *s);
-
 %}
 
-%union {
-    int integer_value;
-    float float_value;
+%union
+{
+    Number number;
 };
 
 %token CONSTANT WHILE IF ENUM DO FOR SWITCH FUNCTION INTEGER FLOAT TRUE FALSE IDENTIFIER ELSE GE LE EQ NE RETURN
 
-%type <integer_value> INTEGER
-%type <integer_value> TRUE
-%type <integer_value> FALSE
-%type <float_value> FLOAT
+%type <number> IDENTIFIER ENUM INTEGER FLOAT TRUE FALSE program statements statement expression boolean_expression identifiers enum_specifier enum_list enumerator
 
 %nonassoc IFX
 %nonassoc ELSE
@@ -38,7 +34,7 @@ statements
     ;
 
 statement
-    : ';' { $$ = NULL; }
+    : ';'
     | expression ';'
     | RETURN expression { printf("Return"); }
     | IDENTIFIER '=' expression ';' { printf("Assignment"); }
@@ -55,7 +51,7 @@ statement
 
 identifiers
     : IDENTIFIER
-    | identifiers ',' IDENTIFIER { ; }
+    | identifiers ',' IDENTIFIER
     ;
 
 expression
@@ -63,22 +59,99 @@ expression
     | FLOAT
     | boolean_expression
     | IDENTIFIER
-    | expression '+' expression { $$ = $1 + $3; }
-    | expression '-' expression { $$ = $1 - $3; }
-    | expression '*' expression { $$ = $1 * $3; }
-    | expression '/' expression { $$ = $1 / $3; }
-    | '(' expression ')' { $$ = $2; }
+    | expression '+' expression {
+        if ($1.type == INTEGER_TYPE && $3.type == INTEGER_TYPE) {
+            $$.type = INTEGER_TYPE;
+            $$.integer_value = $1.integer_value + $3.integer_value;
+        }
+        else if ($1.type == INTEGER_TYPE && $3.type == FLOAT_TYPE) {
+            $$.type = FLOAT_TYPE; 
+            $$.float_value = $1.integer_value + $3.float_value;
+        }
+        else if ($1.type == FLOAT_TYPE && $3.type == INTEGER_TYPE) {
+            $$.type = FLOAT_TYPE; 
+            $$.float_value = $1.float_value + $3.integer_value;
+        }
+        else {
+            $$.type = FLOAT_TYPE; 
+            $$.float_value = $1.float_value + $3.float_value;
+        }
+    }
+    | expression '-' expression {
+        if ($1.type == INTEGER_TYPE && $3.type == INTEGER_TYPE) {
+            $$.type = INTEGER_TYPE;
+            $$.integer_value = $1.integer_value - $3.integer_value;
+        }
+        else if ($1.type == INTEGER_TYPE && $3.type == FLOAT_TYPE) {
+            $$.type = FLOAT_TYPE; 
+            $$.float_value = $1.integer_value - $3.float_value;
+        }
+        else if ($1.type == FLOAT_TYPE && $3.type == INTEGER_TYPE) {
+            $$.type = FLOAT_TYPE; 
+            $$.float_value = $1.float_value - $3.integer_value;
+        }
+        else {
+            $$.type = FLOAT_TYPE; 
+            $$.float_value = $1.float_value - $3.float_value;
+        }
+    }
+    | expression '*' expression {
+        if ($1.type == INTEGER_TYPE && $3.type == INTEGER_TYPE) {
+            $$.type = INTEGER_TYPE;
+            $$.integer_value = $1.integer_value * $3.integer_value;
+        }
+        else if ($1.type == INTEGER_TYPE && $3.type == FLOAT_TYPE) {
+            $$.type = FLOAT_TYPE; 
+            $$.float_value = $1.integer_value * $3.float_value;
+        }
+        else if ($1.type == FLOAT_TYPE && $3.type == INTEGER_TYPE) {
+            $$.type = FLOAT_TYPE; 
+            $$.float_value = $1.float_value * $3.integer_value;
+        }
+        else {
+            $$.type = FLOAT_TYPE; 
+            $$.float_value = $1.float_value * $3.float_value;
+        }
+    }
+    | expression '/' expression {
+        if ($1.type == INTEGER_TYPE && $3.type == INTEGER_TYPE) {
+            $$.type = INTEGER_TYPE;
+            $$.integer_value = $1.integer_value / $3.integer_value;
+        }
+        else if ($1.type == INTEGER_TYPE && $3.type == FLOAT_TYPE) {
+            $$.type = FLOAT_TYPE; 
+            $$.float_value = $1.integer_value / $3.float_value;
+        }
+        else if ($1.type == FLOAT_TYPE && $3.type == INTEGER_TYPE) {
+            $$.type = FLOAT_TYPE; 
+            $$.float_value = $1.float_value / $3.integer_value;
+        }
+        else {
+            $$.type = FLOAT_TYPE; 
+            $$.float_value = $1.float_value / $3.float_value;
+        }
+    }
+    | '(' expression ')' {
+        if ($2.type == INTEGER_TYPE) {
+            $$.type = INTEGER_TYPE;
+            $$.integer_value = $2.integer_value;
+        }
+        else {
+            $$.type = FLOAT_TYPE;
+            $$.float_value = $2.float_value;
+        }
+    }
     ;
 
 enum_specifier
-	: ENUM '{' enumerator_list '}'
-	| ENUM IDENTIFIER '{' enumerator_list '}'
+	: ENUM '{' enum_list '}'
+	| ENUM IDENTIFIER '{' enum_list '}'
 	| ENUM IDENTIFIER '{' '}'
 	;
 
-enumerator_list
+enum_list
 	: enumerator
-	| enumerator_list ',' enumerator
+	| enum_list ',' enumerator
 	;
 
 enumerator
@@ -87,14 +160,104 @@ enumerator
 	;
 
 boolean_expression
-    : TRUE { $$ = 1; }
-    | FALSE { $$ = 0; }
-    | expression '<' expression { $$ = $1 < $3; }
-    | expression '>' expression { $$ = $1 > $3; }
-    | expression GE expression { $$ = $1 >= $3; }
-    | expression LE expression { $$ = $1 <= $3; }
-    | expression NE expression { $$ = $1 != $3; }
-    | expression EQ expression { $$ = $1 == $3; }
+    : TRUE {
+        $$.type = INTEGER_TYPE;
+        $$.integer_value = 1;
+    }
+    | FALSE {
+        $$.type = INTEGER_TYPE;
+        $$.integer_value = 0;
+    }
+    | expression '<' expression {
+        $$.type = INTEGER_TYPE;
+        if ($1.type == INTEGER_TYPE && $3.type == INTEGER_TYPE) {
+            $$.integer_value = $1.integer_value < $3.integer_value;
+        }
+        else if ($1.type == INTEGER_TYPE && $3.type == FLOAT_TYPE) {
+            $$.integer_value = $1.integer_value < $3.float_value;
+        }
+        else if ($1.type == FLOAT_TYPE && $3.type == INTEGER_TYPE) {
+            $$.integer_value = $1.float_value < $3.integer_value;
+        }
+        else {
+            $$.integer_value = $1.float_value < $3.float_value;
+        }
+    }
+    | expression '>' expression {
+        $$.type = INTEGER_TYPE;
+        if ($1.type == INTEGER_TYPE && $3.type == INTEGER_TYPE) {
+            $$.integer_value = $1.integer_value > $3.integer_value;
+        }
+        else if ($1.type == INTEGER_TYPE && $3.type == FLOAT_TYPE) {
+            $$.integer_value = $1.integer_value > $3.float_value;
+        }
+        else if ($1.type == FLOAT_TYPE && $3.type == INTEGER_TYPE) {
+            $$.integer_value = $1.float_value > $3.integer_value;
+        }
+        else {
+            $$.integer_value = $1.float_value > $3.float_value;
+        }
+    }
+    | expression GE expression {
+        $$.type = INTEGER_TYPE;
+        if ($1.type == INTEGER_TYPE && $3.type == INTEGER_TYPE) {
+            $$.integer_value = $1.integer_value >= $3.integer_value;
+        }
+        else if ($1.type == INTEGER_TYPE && $3.type == FLOAT_TYPE) {
+            $$.integer_value = $1.integer_value >= $3.float_value;
+        }
+        else if ($1.type == FLOAT_TYPE && $3.type == INTEGER_TYPE) {
+            $$.integer_value = $1.float_value >= $3.integer_value;
+        }
+        else {
+            $$.integer_value = $1.float_value >= $3.float_value;
+        }
+    }
+    | expression LE expression {
+        $$.type = INTEGER_TYPE;
+        if ($1.type == INTEGER_TYPE && $3.type == INTEGER_TYPE) {
+            $$.integer_value = $1.integer_value <= $3.integer_value;
+        }
+        else if ($1.type == INTEGER_TYPE && $3.type == FLOAT_TYPE) {
+            $$.integer_value = $1.integer_value <= $3.float_value;
+        }
+        else if ($1.type == FLOAT_TYPE && $3.type == INTEGER_TYPE) {
+            $$.integer_value = $1.float_value <= $3.integer_value;
+        }
+        else {
+            $$.integer_value = $1.float_value <= $3.float_value;
+        }
+    }
+    | expression NE expression {
+        $$.type = INTEGER_TYPE;
+        if ($1.type == INTEGER_TYPE && $3.type == INTEGER_TYPE) {
+            $$.integer_value = $1.integer_value != $3.integer_value;
+        }
+        else if ($1.type == INTEGER_TYPE && $3.type == FLOAT_TYPE) {
+            $$.integer_value = $1.integer_value != $3.float_value;
+        }
+        else if ($1.type == FLOAT_TYPE && $3.type == INTEGER_TYPE) {
+            $$.integer_value = $1.float_value != $3.integer_value;
+        }
+        else {
+            $$.integer_value = $1.float_value != $3.float_value;
+        }
+    }
+    | expression EQ expression {
+        $$.type = INTEGER_TYPE;
+        if ($1.type == INTEGER_TYPE && $3.type == INTEGER_TYPE) {
+            $$.integer_value = $1.integer_value == $3.integer_value;
+        }
+        else if ($1.type == INTEGER_TYPE && $3.type == FLOAT_TYPE) {
+            $$.integer_value = $1.integer_value == $3.float_value;
+        }
+        else if ($1.type == FLOAT_TYPE && $3.type == INTEGER_TYPE) {
+            $$.integer_value = $1.float_value == $3.integer_value;
+        }
+        else {
+            $$.integer_value = $1.float_value == $3.float_value;
+        }
+    }
 
 %%
 
