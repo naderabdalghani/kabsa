@@ -1,11 +1,11 @@
+%option c++
+
 %{
     #include <stdlib.h>
     #include "kabsa.h"
     #include "kabsa.tab.hh"
     void yyerror(char *);
 %}
-
-%option c++
 
 %%
 

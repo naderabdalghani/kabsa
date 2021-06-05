@@ -12,14 +12,14 @@
     /* functions prototypes */
     Node *create_integer_number_node(int value);
     Node *create_float_number_node(float value);
-    Node *create_identifier_node(string key);
+    Node *create_identifier_node(std::string key);
     Node *create_operation_node(int operation_token, int num_of_operands, ...);
     void generate(Node *node);
     void free_node(Node *node);
     int yylex(void);
     void yyerror(char *s);
 
-    unordered_map<string, Node> symbol_table;
+    std::unordered_map<std::string, Node> symbol_table;
     static int last_used_label = 0;
 %}
 
@@ -63,11 +63,11 @@ statement
     | RETURN expression { $$ = create_operation_node(RETURN, 1, $2); }
     | IDENTIFIER '=' expression ';' { $$ = create_operation_node('=', 2, create_identifier_node($1), $3); }
     | CONSTANT IDENTIFIER '=' expression ';' { $$ = create_operation_node('=', 2, create_identifier_node($2, CONSTANT_TYPE), $4); }
-    | WHILE '(' expression ')' '{' statement '}' { $$ = create_operation_node(WHILE, 2, $3, $6); }
-    | DO '{' statement '}' WHILE '(' expression ')' { $$ = create_operation_node(DO, 2, $3, $7); }
-    | IF '(' boolean_expression ')' '{' statement '}' %prec IFX { $$ = create_operation_node(IF, 2, $3, $6); }
-    | IF '(' boolean_expression ')' '{' statement '}' ELSE '{' statement '}' { $$ = create_operation_node(IF, 3, $3, $6, $10); }
-    | FOR '(' expression ';' boolean_expression ';' expression ')' '{' statement '}' { $$ = create_operation_node(FOR, 3, $3, $5, $7, $10); }
+    | WHILE '(' expression ')' '{' statement '}' { $$ = create_operation_node($1, 2, $3, $6); }
+    | DO '{' statement '}' WHILE '(' expression ')' { $$ = create_operation_node($1, 2, $3, $7); }
+    | IF '(' boolean_expression ')' '{' statement '}' %prec IFX { $$ = create_operation_node($1, 2, $3, $6); }
+    | IF '(' boolean_expression ')' '{' statement '}' ELSE '{' statement '}' { $$ = create_operation_node($1, 3, $3, $6, $10); }
+    | FOR '(' expression ';' boolean_expression ';' expression ')' '{' statement '}' { $$ = create_operation_node($1, 3, $3, $5, $7, $10); }
     | FUNCTION IDENTIFIER '(' identifiers ')' '{' statement '}'
     | IDENTIFIER '(' identifiers ')' ';'
     | SWITCH '(' expression ')' '{' labeled_statement '}'
@@ -158,7 +158,7 @@ Node *create_float_number_node(float value) {
     return node;
 }
 
-Node *create_identifier_node(string key, identifier_type = VARIABLE_TYPE) {
+Node *create_identifier_node(std::string key, identifier_type = VARIABLE_TYPE) {
     Node *node;
 
     if ((node = malloc(sizeof(Node))) == NULL)

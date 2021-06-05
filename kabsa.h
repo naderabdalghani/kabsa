@@ -20,7 +20,7 @@ typedef struct {
 typedef struct {
     int operator_token;
     int num_of_operands;
-    struct NodeType *operands[1];
+    struct Node *operands[1];
 } OperationNode;
 
 typedef struct Node {
