@@ -5,6 +5,8 @@
     void yyerror(char *);
 %}
 
+%option c++
+
 %%
 
 ">=" return GE;
