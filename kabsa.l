@@ -1,7 +1,7 @@
 %{
     #include <stdlib.h>
     #include "kabsa.h"
-    #include "kabsa.tab.h"
+    #include "kabsa.tab.hh"
     void yyerror(char *);
 %}
 
@@ -42,6 +42,7 @@
 }
 
 [a-zA-Z][a-zA-Z0-9_]* {
+    yylval.symbol_table_key = *yytext;
     return IDENTIFIER;
 }
 
