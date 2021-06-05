@@ -7,12 +7,18 @@
 
 %union
 {
-    Number number;
+    std::string symbol_table_key;
+    int integer_value;
+    float float_value;
+    Node *node;
 };
 
 %token CONSTANT WHILE IF ENUM DO FOR SWITCH FUNCTION INTEGER FLOAT TRUE FALSE IDENTIFIER ELSE GE LE EQ NE RETURN CASE BREAK DEFAULT
 
-%type <number> IDENTIFIER ENUM INTEGER FLOAT TRUE FALSE program statements statement expression boolean_expression identifiers enum_specifier enum_list enumerator
+%type <integer_value> INTEGER TRUE FALSE
+%type <float_value> FLOAT
+%type <symbol_table_key> IDENTIFIER
+%type <node> program statements statement expression boolean_expression identifiers enum_specifier enum_list enumerator
 
 %nonassoc IFX
 %nonassoc ELSE

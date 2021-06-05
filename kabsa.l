@@ -28,14 +28,12 @@
 "default" return DEFAULT;
 
 [+-]?([0-9]*[.])[0-9]+ {
-    yylval.number.float_value = atof(yytext);
-    yylval.number.type = FLOAT_TYPE;
+    yylval.float_value = atof(yytext);
     return FLOAT;
 }
 
 [0-9]+ {
-    yylval.number.integer_value = atoi(yytext);
-    yylval.number.type = INTEGER_TYPE;
+    yylval.integer_value = atoi(yytext);
     return INTEGER;
 }
 
