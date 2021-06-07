@@ -1,5 +1,3 @@
-%language "c++"
-
 %{
     #include <stdio.h>
     #include <stdlib.h>
@@ -31,11 +29,11 @@
     Node *node;
 };
 
-%token CONSTANT WHILE IF ENUM DO FOR SWITCH FUNCTION INTEGER FLOAT TRUE FALSE IDENTIFIER ELSE GE LE EQ NE RETURN CASE BREAK DEFAULT
+%token <integer_value> CONSTANT WHILE IF ENUM DO FOR SWITCH FUNCTION ELSE GE LE EQ NE RETURN CASE BREAK DEFAULT
 
-%type <integer_value> INTEGER TRUE FALSE
-%type <float_value> FLOAT
-%type <symbol_table_key> IDENTIFIER
+%token <integer_value> INTEGER TRUE FALSE
+%token <float_value> FLOAT
+%token <symbol_table_key> IDENTIFIER
 %type <node> program statements statement expression boolean_expression identifiers enum_specifier enum_list enumerator
 
 %nonassoc IFX
@@ -75,7 +73,7 @@ statement
     ;
 
 identifiers
-    : IDENTIFIER
+    :
     | identifiers ',' IDENTIFIER
     ;
 
@@ -133,10 +131,7 @@ boolean_expression
 %%
 
 Node *create_integer_number_node(int value) {
-    Node *node;
-
-    if ((node = malloc(sizeof(Node))) == NULL)
-        yyerror("Out of memory");
+    Node *node = new Node();
 
     node->type = NUMBER_TYPE;
     node->number.type = INTEGER_TYPE;
@@ -146,7 +141,7 @@ Node *create_integer_number_node(int value) {
 }
 
 Node *create_float_number_node(float value) {
-    Node *node;
+    Node *node = new Node();
 
     if ((node = malloc(sizeof(Node))) == NULL)
         yyerror("Out of memory");
@@ -159,7 +154,7 @@ Node *create_float_number_node(float value) {
 }
 
 Node *create_identifier_node(std::string key, identifier_type = VARIABLE_TYPE) {
-    Node *node;
+    Node *node = new Node();
 
     if ((node = malloc(sizeof(Node))) == NULL)
         yyerror("Out of memory");
@@ -173,7 +168,7 @@ Node *create_identifier_node(std::string key, identifier_type = VARIABLE_TYPE) {
 
 Node *create_operation_node(int operation_token, int num_of_operands, ...) {
     va_list arguments_list;
-    Node *node;
+    Node *node = new Node();
 
     if ((node = malloc(sizeof(Node) + (num_of_operands - 1) * sizeof(Node *))) == NULL)
         yyerror("Out of memory");
