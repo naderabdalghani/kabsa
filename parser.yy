@@ -252,7 +252,6 @@ namespace kabsa
 						std::cout << "\tNEG" << std::endl;
 					} break;
                     default:
-						std::cout << operation_node->getNumberOfOperands() << std::endl;
                         generate(operation_node->getOperandNode(0));
                         generate(operation_node->getOperandNode(1));
                         switch(operation_node->getOperatorToken()) {
