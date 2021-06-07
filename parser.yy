@@ -187,7 +187,7 @@ namespace kabsa
 
         va_start(arguments_list, num_of_operands);
         for (int i = 0; i < num_of_operands; i++)
-            node->getOperands().push_back(va_arg(arguments_list, Node *));
+            node->addOperandNode(va_arg(arguments_list, Node *));
         va_end(arguments_list);
 
         return node;
@@ -213,48 +213,48 @@ namespace kabsa
 			} break;
             case OPERATION_TYPE: {
 				OperationNode *operation_node = dynamic_cast<OperationNode *>(node);
-				std::vector<Node *> operands = operation_node->getOperands();
                 switch(operation_node->getOperatorToken()) {
                     case kabsa::Parser::token::WHILE: {
 						label_1 = last_used_label++;
 						std::cout << 'L' << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
-                        generate(operands[0]);
+                        generate(operation_node->getOperandNode(0));
 						label_2 = last_used_label++;
 						std::cout << "\tJZ\tL" << std::setfill('0') << std::setw(4) << label_2 << ':' << std::endl;
-                        generate(operands[1]);
+                        generate(operation_node->getOperandNode(1));
 						std::cout << "\tJMP\tL" << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
 						std::cout << 'L' << std::setfill('0') << std::setw(4) << label_2 << ':' << std::endl;
 					} break;
                     case kabsa::Parser::token::IF: {
-                        generate(operands[0]);
-                        if (operands.size() > 2) {
+                        generate(operation_node->getOperandNode(0));
+                        if (operation_node->getNumberOfOperands() > 2) {
 							label_1 = last_used_label++;
 							std::cout << "\tJZ\tL" << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
-                            generate(operands[1]);
+                            generate(operation_node->getOperandNode(1));
 							label_2 = last_used_label++;
 							std::cout << "\tJMP\tL" << std::setfill('0') << std::setw(4) << label_2 << ':' << std::endl;
 							std::cout << 'L' << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
-                            generate(operands[2]);
+                            generate(operation_node->getOperandNode(2));
 							std::cout << 'L' << std::setfill('0') << std::setw(4) << label_2 << ':' << std::endl;
                         } else {
 							label_1 = last_used_label++;
 							std::cout << "\tJZ\tL" << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
-                            generate(operands[1]);
+                            generate(operation_node->getOperandNode(1));
 							std::cout << 'L' << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
                         }
 					} break;
                     case kabsa::Parser::token::ASSIGN: {
-                        generate(operands[1]);
-						IdentifierNode *identifier_operand = dynamic_cast<IdentifierNode *>(operands[0]);
+                        generate(operation_node->getOperandNode(1));
+						IdentifierNode *identifier_operand = dynamic_cast<IdentifierNode *>(operation_node->getOperandNode(0));
 						std::cout << "\tPOP\t" << identifier_operand->getKey() << std::endl;
 					} break;
 					case kabsa::Parser::token::UMINUS: {
-						generate(operands[0]);
+						generate(operation_node->getOperandNode(0));
 						std::cout << "\tNEG" << std::endl;
 					} break;
                     default:
-                        generate(operands[0]);
-                        generate(operands[1]);
+						std::cout << operation_node->getNumberOfOperands() << std::endl;
+                        generate(operation_node->getOperandNode(0));
+                        generate(operation_node->getOperandNode(1));
                         switch(operation_node->getOperatorToken()) {
                             case kabsa::Parser::token::PLUS: std::cout << "\tNEG" << std::endl; break;
                             case kabsa::Parser::token::MINUS: std::cout << "\tSUB" << std::endl; break;
@@ -276,9 +276,8 @@ namespace kabsa
         if (!node) return;
         if (node->getNodeType() == OPERATION_TYPE) {
 			OperationNode *operation_node = dynamic_cast<OperationNode *>(node);
-			std::vector<Node *> operands = operation_node->getOperands();
-            for (int i = 0; i < operands.size(); i++)
-                free_node(operands[i]);
+            for (int i = 0; i < operation_node->getNumberOfOperands(); i++)
+                free_node(operation_node->getOperandNode(i));
         }
         delete node;
     }

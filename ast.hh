@@ -24,7 +24,9 @@ namespace kabsa {
         public:
             OperationNode(int operator_token) : Node(OPERATION_TYPE), operator_token(operator_token) {}
             int getOperatorToken() { return this->operator_token; }
-            std::vector<Node *> getOperands() { return this->operands; }
+            void addOperandNode(Node * operand) { this->operands.push_back(operand); }
+            Node *getOperandNode(int index) { return this->operands.at(index); }
+            int getNumberOfOperands() { return this->operands.size(); }
     };
 
     class IdentifierNode : public Node {
