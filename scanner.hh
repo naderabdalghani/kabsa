@@ -6,10 +6,7 @@
 
 
 # ifndef YY_DECL
-#  define YY_DECL kabsa::Parser::token_type                         \
-     kabsa::Scanner::yylex(kabsa::Parser::semantic_type* yylval,    \
-                              kabsa::Parser::location_type*,        \
-                              kabsa::Driver& driver)
+#  define YY_DECL kabsa::Parser::token_type kabsa::Scanner::yylex(kabsa::Parser::semantic_type* yylval, kabsa::Parser::location_type*, kabsa::Driver& driver)
 # endif
 
 
@@ -20,20 +17,12 @@
 # endif
 
 
-namespace kabsa
-{
-    class Scanner : public kabsaFlexLexer
-    {
+namespace kabsa {
+    class Scanner : public kabsaFlexLexer {
         public:
             Scanner();
-
             virtual ~Scanner();
-
-            virtual Parser::token_type yylex(
-                Parser::semantic_type* yylval,
-                Parser::location_type* l,
-                Driver& driver);
-
+            virtual Parser::token_type yylex(Parser::semantic_type* yylval, Parser::location_type* l, Driver& driver);
             void set_debug(bool b);
     };
 }

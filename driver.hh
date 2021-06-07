@@ -2,10 +2,10 @@
 #ifndef DRIVER_HH_
 # define DRIVER_HH_
 
-# include <string>
-# include <iostream>
-# include <fstream>
-
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <unordered_map>
 
 namespace kabsa {
     class Parser;
@@ -14,12 +14,14 @@ namespace kabsa {
 
     class Driver {
         public:
+	        // std::unordered_map<std::string, Node> symbol_table;
+
             Driver();
             ~Driver();
 
             void reset();
             int parse();
-            int parse_file(std::string& path);
+            int parse_file(const std::string& path);
 
         private:
             Scanner*      scanner_;

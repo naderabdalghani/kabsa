@@ -19,7 +19,7 @@ namespace kabsa {
         return 0;
     }
 
-    int Driver::parse_file (std::string& path) {
+    int Driver::parse_file (const std::string& path) {
         std::ifstream s(path.c_str(), std::ifstream::in);
         scanner_->switch_streams(&s, &std::cerr);
         parser_->parse();
