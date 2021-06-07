@@ -10,6 +10,7 @@
 %code requires
 {
 	#include <iostream>
+	#include <iomanip>
 	#include "ast.hh"
 	#include "driver.hh"
 	#include "location.hh"
@@ -21,7 +22,7 @@
 		Node *create_identifier_node(std::string key, identifierEnum identifier_type = VARIABLE_TYPE);
 		Node *create_operation_node(int operation_token, int num_of_operands, ...);
 		void generate(Node *node);
-		/* void free_node(Node *node); */
+		void free_node(Node *node);
 		static int last_used_label = 0;
 	}
 }
@@ -72,7 +73,7 @@
 
 program
 	: %empty {}
-	| program statement { generate($2); /* free_node($2); */ exit(0); }
+	| program statement { generate($2); free_node($2); exit(0); }
 	;
 
 statement
@@ -200,78 +201,85 @@ namespace kabsa
 				NumberNode<int> *integer_number_node = dynamic_cast<NumberNode<int> *>(node);
 				NumberNode<double> *double_number_node = dynamic_cast<NumberNode<double> *>(node);
 				if (integer_number_node == NULL) {
-					printf("\tPUSH\t%d\n", double_number_node->getValue());
+					std::cout << "\tPUSH\t" << double_number_node->getValue() << std::endl;
 				}
 				else {
-					printf("\tPUSH\t%d\n", integer_number_node->getValue());
+					std::cout << "\tPUSH\t" << integer_number_node->getValue() << std::endl;
 				}
 			} break;
             case IDENTIFIER_TYPE: {
 				IdentifierNode *identifier_node = dynamic_cast<IdentifierNode *>(node);
-                printf("\tPUSH\t%s\n", identifier_node->getKey());
+				std::cout << "\tPUSH\t" << identifier_node->getKey() << std::endl;
 			} break;
             case OPERATION_TYPE: {
 				OperationNode *operation_node = dynamic_cast<OperationNode *>(node);
 				std::vector<Node *> operands = operation_node->getOperands();
                 switch(operation_node->getOperatorToken()) {
                     case kabsa::Parser::token::WHILE: {
-                        printf("L%03d:\n", label_1 = last_used_label++);
+						label_1 = last_used_label++;
+						std::cout << 'L' << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
                         generate(operands[0]);
-                        printf("\tJZ\tL%03d\n", label_2 = last_used_label++);
+						label_2 = last_used_label++;
+						std::cout << "\tJZ\tL" << std::setfill('0') << std::setw(4) << label_2 << ':' << std::endl;
                         generate(operands[1]);
-                        printf("\tJMP\tL%03d\n", label_1);
-                        printf("L%03d:\n", label_2);
+						std::cout << "\tJMP\tL" << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
+						std::cout << 'L' << std::setfill('0') << std::setw(4) << label_2 << ':' << std::endl;
 					} break;
                     case kabsa::Parser::token::IF: {
                         generate(operands[0]);
                         if (operands.size() > 2) {
-                            printf("\tJZ\tL%03d\n", label_1 = last_used_label++);
+							label_1 = last_used_label++;
+							std::cout << "\tJZ\tL" << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
                             generate(operands[1]);
-                            printf("\tJMP\tL%03d\n", label_2 = last_used_label++);
-                            printf("L%03d:\n", label_1);
+							label_2 = last_used_label++;
+							std::cout << "\tJMP\tL" << std::setfill('0') << std::setw(4) << label_2 << ':' << std::endl;
+							std::cout << 'L' << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
                             generate(operands[2]);
-                            printf("L%03d:\n", label_2);
+							std::cout << 'L' << std::setfill('0') << std::setw(4) << label_2 << ':' << std::endl;
                         } else {
-                            printf("\tJZ\tL%03d\n", label_1 = last_used_label++);
+							label_1 = last_used_label++;
+							std::cout << "\tJZ\tL" << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
                             generate(operands[1]);
-                            printf("L%03d:\n", label_1);
+							std::cout << 'L' << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
                         }
 					} break;
                     case kabsa::Parser::token::ASSIGN: {
                         generate(operands[1]);
 						IdentifierNode *identifier_operand = dynamic_cast<IdentifierNode *>(operands[0]);
-                        printf("\tPOP\t%c\n", identifier_operand->getKey());
+						std::cout << "\tPOP\t" << identifier_operand->getKey() << std::endl;
 					} break;
 					case kabsa::Parser::token::UMINUS: {
 						generate(operands[0]);
-						printf("\tNEG\n");
+						std::cout << "\tNEG" << std::endl;
 					} break;
                     default:
                         generate(operands[0]);
                         generate(operands[1]);
                         switch(operation_node->getOperatorToken()) {
-                            case kabsa::Parser::token::PLUS: printf("\tADD\n"); break;
-                            case kabsa::Parser::token::MINUS: printf("\tSUB\n"); break;
-                            case kabsa::Parser::token::MULTIPLY: printf("\tMUL\n"); break;
-                            case kabsa::Parser::token::DIVIDE: printf("\tDIV\n"); break;
-                            case kabsa::Parser::token::LT: printf("\tCMPLT\n"); break;
-                            case kabsa::Parser::token::GT: printf("\tCMPGT\n"); break;
-                            case kabsa::Parser::token::GE: printf("\tCMPGE\n"); break;
-                            case kabsa::Parser::token::LE: printf("\tCMPLE\n"); break;
-                            case kabsa::Parser::token::NE: printf("\tCMPNE\n"); break;
-                            case kabsa::Parser::token::EQ: printf("\tCMPEQ\n"); break;
+                            case kabsa::Parser::token::PLUS: std::cout << "\tNEG" << std::endl; break;
+                            case kabsa::Parser::token::MINUS: std::cout << "\tSUB" << std::endl; break;
+                            case kabsa::Parser::token::MULTIPLY: std::cout << "\tMUL" << std::endl; break;
+                            case kabsa::Parser::token::DIVIDE: std::cout << "\tDIV" << std::endl; break;
+                            case kabsa::Parser::token::LT: std::cout << "\tCMPLT" << std::endl; break;
+                            case kabsa::Parser::token::GT: std::cout << "\tCMPGT" << std::endl; break;
+                            case kabsa::Parser::token::GE: std::cout << "\tCMPGE" << std::endl; break;
+                            case kabsa::Parser::token::LE: std::cout << "\tCMPLE" << std::endl; break;
+                            case kabsa::Parser::token::NE: std::cout << "\tCMPNE" << std::endl; break;
+                            case kabsa::Parser::token::EQ: std::cout << "\tCMPEQ" << std::endl; break;
                         }
                 }
 			} break;
         }
     }
 
-    /* void free_node(Node node) {
+    void free_node(Node *node) {
         if (!node) return;
-        if (node->type == OPERATION_TYPE) {
-            for (int i = 0; i < node->operation.num_of_operands; i++)
-                free_node(node->operation.operands[i]);
+        if (node->getNodeType() == OPERATION_TYPE) {
+			OperationNode *operation_node = dynamic_cast<OperationNode *>(node);
+			std::vector<Node *> operands = operation_node->getOperands();
+            for (int i = 0; i < operands.size(); i++)
+                free_node(operands[i]);
         }
         delete node;
-    } */
+    }
 }

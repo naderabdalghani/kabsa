@@ -12,6 +12,7 @@ namespace kabsa {
             nodeEnum node_type;
         public:
             Node(nodeEnum node_type) : node_type(node_type) {}
+            virtual ~Node() {}
             virtual void setNodeType(nodeEnum node_type) { this->node_type = node_type; }
             virtual nodeEnum getNodeType() { return this->node_type; }
     };
