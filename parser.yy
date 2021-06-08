@@ -217,25 +217,25 @@ namespace kabsa
 						std::cout << 'L' << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
                         generate(operation_node->getOperandNode(0));
 						label_2 = last_used_label++;
-						std::cout << "\tJZ\tL" << std::setfill('0') << std::setw(4) << label_2 << ':' << std::endl;
+						std::cout << "\tJZ\tL" << std::setfill('0') << std::setw(4) << label_2 << std::endl;
                         generate(operation_node->getOperandNode(1));
-						std::cout << "\tJMP\tL" << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
+						std::cout << "\tJMP\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
 						std::cout << 'L' << std::setfill('0') << std::setw(4) << label_2 << ':' << std::endl;
 					} break;
                     case kabsa::Parser::token::IF: {
                         generate(operation_node->getOperandNode(0));
                         if (operation_node->getNumberOfOperands() > 2) {
 							label_1 = last_used_label++;
-							std::cout << "\tJZ\tL" << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
+							std::cout << "\tJZ\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
                             generate(operation_node->getOperandNode(1));
 							label_2 = last_used_label++;
-							std::cout << "\tJMP\tL" << std::setfill('0') << std::setw(4) << label_2 << ':' << std::endl;
+							std::cout << "\tJMP\tL" << std::setfill('0') << std::setw(4) << label_2 << std::endl;
 							std::cout << 'L' << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
                             generate(operation_node->getOperandNode(2));
 							std::cout << 'L' << std::setfill('0') << std::setw(4) << label_2 << ':' << std::endl;
                         } else {
 							label_1 = last_used_label++;
-							std::cout << "\tJZ\tL" << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
+							std::cout << "\tJZ\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
                             generate(operation_node->getOperandNode(1));
 							std::cout << 'L' << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
                         }
