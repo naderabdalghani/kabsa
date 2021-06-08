@@ -53,7 +53,7 @@
 
 
 %token TOK_EOF 0
-%token <int> CONSTANT WHILE IF ENUM DO FOR SWITCH FUNCTION ELSE GE LE EQ NE RETURN CASE BREAK DEFAULT PLUS MINUS MULTIPLY DIVIDE SEMICOLON COLON LEFT_PARENTHESIS RIGHT_PARENTHESIS LEFT_BRACES RIGHT_BRACES ASSIGN GT LT COMMA
+%token <int> CONSTANT WHILE IF ENUM DO FOR SWITCH FUNCTION ELSE GE LE EQ NE RETURN CASE BREAK DEFAULT PLUS MINUS MULTIPLY DIVIDE SEMICOLON COLON LEFT_PARENTHESIS RIGHT_PARENTHESIS LEFT_BRACES RIGHT_BRACES ASSIGN GT LT COMMA AND OR NOT
 %token <int> INTEGER TRUE FALSE
 %token <double> DOUBLE
 %token <std::string> IDENTIFIER
@@ -61,10 +61,14 @@
 
 %nonassoc IFX
 %nonassoc ELSE
-%nonassoc UMINUS
-%left GE LE EQ NE GT LT
+%left OR
+%left AND
+%left EQ NE
+%left LT LE GT GE
 %left PLUS MINUS
 %left MULTIPLY DIVIDE
+%right NOT
+%nonassoc UMINUS
 
 
 %%
@@ -77,14 +81,14 @@ program
 statement
 	: SEMICOLON { $$ = create_operation_node(kabsa::Parser::token::SEMICOLON, 2, NULL, NULL); }
 	| expression SEMICOLON { $$ = $1; }
-	| RETURN expression { $$ = create_operation_node(kabsa::Parser::token::RETURN, 1, $2); }
+	| RETURN expression SEMICOLON { $$ = create_operation_node(kabsa::Parser::token::RETURN, 1, $2); }
 	| IDENTIFIER ASSIGN expression SEMICOLON { $$ = create_operation_node(kabsa::Parser::token::ASSIGN, 2, create_identifier_node($1), $3); }
 	| CONSTANT IDENTIFIER ASSIGN expression SEMICOLON { $$ = create_operation_node(kabsa::Parser::token::ASSIGN, 2, create_identifier_node($2, CONSTANT_TYPE), $4); }
 	| WHILE LEFT_PARENTHESIS expression RIGHT_PARENTHESIS statement { $$ = create_operation_node(kabsa::Parser::token::WHILE, 2, $3, $5); }
 	| DO statement WHILE LEFT_PARENTHESIS expression RIGHT_PARENTHESIS { $$ = create_operation_node(kabsa::Parser::token::DO, 2, $5, $2); }
 	| IF LEFT_PARENTHESIS boolean_expression RIGHT_PARENTHESIS statement %prec IFX { $$ = create_operation_node(kabsa::Parser::token::IF, 2, $3, $5); }
 	| IF LEFT_PARENTHESIS boolean_expression RIGHT_PARENTHESIS statement ELSE statement { $$ = create_operation_node(kabsa::Parser::token::IF, 3, $3, $5, $7); }
-	| FOR LEFT_PARENTHESIS expression SEMICOLON boolean_expression SEMICOLON expression RIGHT_PARENTHESIS statement { $$ = create_operation_node(kabsa::Parser::token::FOR, 3, $3, $5, $7, $9); }
+	| FOR LEFT_PARENTHESIS expression SEMICOLON boolean_expression SEMICOLON expression RIGHT_PARENTHESIS statement { $$ = create_operation_node(kabsa::Parser::token::FOR, 4, $3, $5, $7, $9); }
 	| FUNCTION IDENTIFIER LEFT_PARENTHESIS identifiers RIGHT_PARENTHESIS statement {}
 	| IDENTIFIER LEFT_PARENTHESIS identifiers RIGHT_PARENTHESIS SEMICOLON {}
 	| SWITCH LEFT_PARENTHESIS expression RIGHT_PARENTHESIS LEFT_BRACES labeled_statement RIGHT_BRACES {}
@@ -151,6 +155,9 @@ boolean_expression
 	| expression LE expression { $$ = create_operation_node(kabsa::Parser::token::LE, 2, $1, $3); }
 	| expression NE expression { $$ = create_operation_node(kabsa::Parser::token::NE, 2, $1, $3); }
 	| expression EQ expression { $$ = create_operation_node(kabsa::Parser::token::EQ, 2, $1, $3); }
+	| expression AND expression { $$ = create_operation_node(kabsa::Parser::token::AND, 2, $1, $3); }
+	| expression OR expression { $$ = create_operation_node(kabsa::Parser::token::OR, 2, $1, $3); }
+	| NOT expression { $$ = create_operation_node(kabsa::Parser::token::NOT, 1, $2); }
 	;
 
 %%
@@ -263,6 +270,9 @@ namespace kabsa
                             case kabsa::Parser::token::LE: std::cout << "\tCMPLE" << std::endl; break;
                             case kabsa::Parser::token::NE: std::cout << "\tCMPNE" << std::endl; break;
                             case kabsa::Parser::token::EQ: std::cout << "\tCMPEQ" << std::endl; break;
+                            case kabsa::Parser::token::AND: std::cout << "\tAND" << std::endl; break;
+                            case kabsa::Parser::token::OR: std::cout << "\tOR" << std::endl; break;
+                            case kabsa::Parser::token::NOT: std::cout << "\tNOT" << std::endl; break;
                         }
                 }
 			} break;

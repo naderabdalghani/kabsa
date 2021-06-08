@@ -55,6 +55,9 @@ eol     [\n\r]+
 "="  return kabsa::Parser::token::ASSIGN;
 ">" return kabsa::Parser::token::GT;
 "<" return kabsa::Parser::token::LT;
+"&" return kabsa::Parser::token::AND;
+"|" return kabsa::Parser::token::OR;
+"!" return kabsa::Parser::token::NOT;
 "const" return kabsa::Parser::token::CONSTANT;
 "enum" return kabsa::Parser::token::ENUM;
 "while" return kabsa::Parser::token::WHILE;
