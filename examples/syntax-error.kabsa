@@ -1,4 +1,4 @@
-void main()
+function main()
 {
-  int 2s = 10;
+  2s = 10;
 }

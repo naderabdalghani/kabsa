@@ -1,9 +1,9 @@
-void main()
+function main()
 {
-  int x = 0;
-  int y = 10;
-  int z = x / y - x;
-  bool a = true;
-  bool b = false;
-  bool c = a && b;
+  x = 0;
+  y = 10;
+  z = x / y - x;
+  a = true;
+  b = false;
+  c = a && b;
 }

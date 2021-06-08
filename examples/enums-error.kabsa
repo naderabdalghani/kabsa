@@ -4,7 +4,7 @@ enum day_of_the_week
   Sun
 };
 
-void main()
+function main()
 {
-  int x = Tue;
+  x = Tue;
 }

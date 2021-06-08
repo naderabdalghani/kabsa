@@ -1,7 +1,7 @@
-void main()
+function main()
 {
-  int x = 10;
-  int b;
+  x = 10;
+  b;
   if (x == 10)
   {
     b = 10;

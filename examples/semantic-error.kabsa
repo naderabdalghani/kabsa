@@ -1,6 +1,6 @@
-void main()
+function main()
 {
-  int x;
-  string a;
+  x = 10;
+  a = 10.5;
   x = a;
 }

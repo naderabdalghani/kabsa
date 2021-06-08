@@ -1,10 +1,10 @@
-int sum(int x, int y)
+function sum(x, y)
 {
   return x + y;
 }
 
-void main()
+function main()
 {
-  int a = sum(10, 20);
+  a = sum(10, 20);
   a = sum(a, a);
 }
