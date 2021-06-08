@@ -67,26 +67,24 @@
 %left MULTIPLY DIVIDE
 
 
-%start program
-
 %%
 
 program
 	: %empty {}
-	| program statement { generate($2); free_node($2); exit(0); }
+	| program statement { generate($2); free_node($2); }
 	;
 
 statement
-	: SEMICOLON { $$ = create_operation_node($1, 2, NULL, NULL); }
+	: SEMICOLON { $$ = create_operation_node(kabsa::Parser::token::SEMICOLON, 2, NULL, NULL); }
 	| expression SEMICOLON { $$ = $1; }
-	| RETURN expression { $$ = create_operation_node($1, 1, $2); }
-	| IDENTIFIER ASSIGN expression SEMICOLON { $$ = create_operation_node($2, 2, create_identifier_node($1), $3); }
-	| CONSTANT IDENTIFIER ASSIGN expression SEMICOLON { $$ = create_operation_node($3, 2, create_identifier_node($2, CONSTANT_TYPE), $4); }
-	| WHILE LEFT_PARENTHESIS expression RIGHT_PARENTHESIS statement { $$ = create_operation_node($1, 2, $3, $5); }
-	| DO statement WHILE LEFT_PARENTHESIS expression RIGHT_PARENTHESIS { $$ = create_operation_node($1, 2, $5, $2); }
-	| IF LEFT_PARENTHESIS boolean_expression RIGHT_PARENTHESIS statement %prec IFX { $$ = create_operation_node($1, 2, $3, $5); }
-	| IF LEFT_PARENTHESIS boolean_expression RIGHT_PARENTHESIS statement ELSE statement { $$ = create_operation_node($1, 3, $3, $5, $7); }
-	| FOR LEFT_PARENTHESIS expression SEMICOLON boolean_expression SEMICOLON expression RIGHT_PARENTHESIS statement { $$ = create_operation_node($1, 3, $3, $5, $7, $9); }
+	| RETURN expression { $$ = create_operation_node(kabsa::Parser::token::RETURN, 1, $2); }
+	| IDENTIFIER ASSIGN expression SEMICOLON { $$ = create_operation_node(kabsa::Parser::token::ASSIGN, 2, create_identifier_node($1), $3); }
+	| CONSTANT IDENTIFIER ASSIGN expression SEMICOLON { $$ = create_operation_node(kabsa::Parser::token::ASSIGN, 2, create_identifier_node($2, CONSTANT_TYPE), $4); }
+	| WHILE LEFT_PARENTHESIS expression RIGHT_PARENTHESIS statement { $$ = create_operation_node(kabsa::Parser::token::WHILE, 2, $3, $5); }
+	| DO statement WHILE LEFT_PARENTHESIS expression RIGHT_PARENTHESIS { $$ = create_operation_node(kabsa::Parser::token::DO, 2, $5, $2); }
+	| IF LEFT_PARENTHESIS boolean_expression RIGHT_PARENTHESIS statement %prec IFX { $$ = create_operation_node(kabsa::Parser::token::IF, 2, $3, $5); }
+	| IF LEFT_PARENTHESIS boolean_expression RIGHT_PARENTHESIS statement ELSE statement { $$ = create_operation_node(kabsa::Parser::token::IF, 3, $3, $5, $7); }
+	| FOR LEFT_PARENTHESIS expression SEMICOLON boolean_expression SEMICOLON expression RIGHT_PARENTHESIS statement { $$ = create_operation_node(kabsa::Parser::token::FOR, 3, $3, $5, $7, $9); }
 	| FUNCTION IDENTIFIER LEFT_PARENTHESIS identifiers RIGHT_PARENTHESIS statement {}
 	| IDENTIFIER LEFT_PARENTHESIS identifiers RIGHT_PARENTHESIS SEMICOLON {}
 	| SWITCH LEFT_PARENTHESIS expression RIGHT_PARENTHESIS LEFT_BRACES labeled_statement RIGHT_BRACES {}
@@ -109,10 +107,10 @@ expression
 	| boolean_expression
 	| IDENTIFIER { $$ = create_identifier_node($1); }
 	| MINUS expression %prec UMINUS { $$ = create_operation_node(kabsa::Parser::token::UMINUS, 1, $2); }
-	| expression PLUS expression { $$ = create_operation_node($2, 2, $1, $3); }
-	| expression MINUS expression { $$ = create_operation_node($2, 2, $1, $3); }
-	| expression MULTIPLY expression { $$ = create_operation_node($2, 2, $1, $3); }
-	| expression DIVIDE expression { $$ = create_operation_node($2, 2, $1, $3); }
+	| expression PLUS expression { $$ = create_operation_node(kabsa::Parser::token::PLUS, 2, $1, $3); }
+	| expression MINUS expression { $$ = create_operation_node(kabsa::Parser::token::MINUS, 2, $1, $3); }
+	| expression MULTIPLY expression { $$ = create_operation_node(kabsa::Parser::token::MULTIPLY, 2, $1, $3); }
+	| expression DIVIDE expression { $$ = create_operation_node(kabsa::Parser::token::DIVIDE, 2, $1, $3); }
 	| LEFT_PARENTHESIS expression RIGHT_PARENTHESIS { $$ = $2; }
 	;
 
@@ -147,12 +145,12 @@ enumerator
 boolean_expression
 	: TRUE { $$ = create_integer_number_node(1); }
 	| FALSE { $$ = create_integer_number_node(0); }
-	| expression LT expression { $$ = create_operation_node($2, 2, $1, $3); }
-	| expression GT expression { $$ = create_operation_node($2, 2, $1, $3); }
-	| expression GE expression { $$ = create_operation_node($2, 2, $1, $3); }
-	| expression LE expression { $$ = create_operation_node($2, 2, $1, $3); }
-	| expression NE expression { $$ = create_operation_node($2, 2, $1, $3); }
-	| expression EQ expression { $$ = create_operation_node($2, 2, $1, $3); }
+	| expression LT expression { $$ = create_operation_node(kabsa::Parser::token::LT, 2, $1, $3); }
+	| expression GT expression { $$ = create_operation_node(kabsa::Parser::token::GT, 2, $1, $3); }
+	| expression GE expression { $$ = create_operation_node(kabsa::Parser::token::GE, 2, $1, $3); }
+	| expression LE expression { $$ = create_operation_node(kabsa::Parser::token::LE, 2, $1, $3); }
+	| expression NE expression { $$ = create_operation_node(kabsa::Parser::token::NE, 2, $1, $3); }
+	| expression EQ expression { $$ = create_operation_node(kabsa::Parser::token::EQ, 2, $1, $3); }
 	;
 
 %%
@@ -255,7 +253,7 @@ namespace kabsa
                         generate(operation_node->getOperandNode(0));
                         generate(operation_node->getOperandNode(1));
                         switch(operation_node->getOperatorToken()) {
-                            case kabsa::Parser::token::PLUS: std::cout << "\tNEG" << std::endl; break;
+                            case kabsa::Parser::token::PLUS: std::cout << "\tADD" << std::endl; break;
                             case kabsa::Parser::token::MINUS: std::cout << "\tSUB" << std::endl; break;
                             case kabsa::Parser::token::MULTIPLY: std::cout << "\tMUL" << std::endl; break;
                             case kabsa::Parser::token::DIVIDE: std::cout << "\tDIV" << std::endl; break;
