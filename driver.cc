@@ -26,4 +26,13 @@ namespace kabsa {
         s.close();
         return 0;
     }
+
+    bool Driver::write_outfile(const std::string& path, const std::stringstream& ss) {
+        std::ofstream outfile(path);
+        if(!outfile.is_open())
+            return false;
+        outfile<< ss.rdbuf();
+        outfile.close();
+        return true;
+    }
 }
