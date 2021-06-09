@@ -53,7 +53,7 @@
 
 
 %token TOK_EOF 0
-%token <int> CONSTANT WHILE IF ENUM DO FOR SWITCH FUNCTION ELSE GE LE EQ NE RETURN CASE BREAK DEFAULT PLUS MINUS MULTIPLY DIVIDE SEMICOLON COLON LEFT_PARENTHESIS RIGHT_PARENTHESIS LEFT_BRACES RIGHT_BRACES ASSIGN GT LT COMMA AND OR NOT CALL
+%token <int> CONSTANT WHILE IF ENUM DO FOR SWITCH FUNCTION ELSE GE LE EQ NE RETURN CASE BREAK DEFAULT PLUS MINUS MULTIPLY DIVIDE SEMICOLON COLON LEFT_PARENTHESIS RIGHT_PARENTHESIS LEFT_BRACES RIGHT_BRACES ASSIGN GT LT COMMA AND OR NOT CALL PUSH_ARGS
 %token <int> INTEGER TRUE FALSE
 %token <double> DOUBLE
 %token <std::string> IDENTIFIER
@@ -119,7 +119,7 @@ parameters
 arguments
 	: %empty {}
 	| expression
-	| arguments COMMA expression { $$ = create_operation_node(kabsa::Parser::token::COMMA, 2, $1, $3); }
+	| arguments COMMA expression { $$ = create_operation_node(kabsa::Parser::token::PUSH_ARGS, 2, $1, $3); }
 	;
 
 expression
@@ -315,6 +315,10 @@ namespace kabsa
 					case kabsa::Parser::token::UMINUS: {
 						generate(operation_node->getOperandNode(0));
 						std::cout << "\tNEG" << std::endl;
+					} break;
+					case kabsa::Parser::token::PUSH_ARGS: {
+						generate(operation_node->getOperandNode(1));
+                        generate(operation_node->getOperandNode(0));
 					} break;
                     default:
                         generate(operation_node->getOperandNode(0));
