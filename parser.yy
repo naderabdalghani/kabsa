@@ -53,11 +53,11 @@
 
 
 %token TOK_EOF 0
-%token <int> CONSTANT WHILE IF ENUM DO FOR SWITCH FUNCTION ELSE GE LE EQ NE RETURN CASE BREAK DEFAULT PLUS MINUS MULTIPLY DIVIDE SEMICOLON COLON LEFT_PARENTHESIS RIGHT_PARENTHESIS LEFT_BRACES RIGHT_BRACES ASSIGN GT LT COMMA AND OR NOT
+%token <int> CONSTANT WHILE IF ENUM DO FOR SWITCH FUNCTION ELSE GE LE EQ NE RETURN CASE BREAK DEFAULT PLUS MINUS MULTIPLY DIVIDE SEMICOLON COLON LEFT_PARENTHESIS RIGHT_PARENTHESIS LEFT_BRACES RIGHT_BRACES ASSIGN GT LT COMMA AND OR NOT CALL PUSH_ARGS
 %token <int> INTEGER TRUE FALSE
 %token <double> DOUBLE
 %token <std::string> IDENTIFIER
-%nterm <Node *> program statements statement expression boolean_expression identifiers enum_specifier enum_list enumerator assignment
+%nterm <Node *> program statements statement expression boolean_expression arguments enum_specifier enum_list enumerator assignment parameters function function_call
 
 %nonassoc IFX
 %nonassoc ELSE
@@ -75,7 +75,11 @@
 
 program
 	: %empty {}
-	| program statement { generate($2); free_node($2); }
+	| program function { generate($2); free_node($2); }
+	;
+
+function
+	: FUNCTION IDENTIFIER LEFT_PARENTHESIS parameters RIGHT_PARENTHESIS statement { $$ = create_operation_node(kabsa::Parser::token::FUNCTION, 3, create_identifier_node($2, FUNCTION_TYPE), $4, $6); }
 	;
 
 statement
@@ -89,10 +93,12 @@ statement
 	| IF LEFT_PARENTHESIS boolean_expression RIGHT_PARENTHESIS statement %prec IFX { $$ = create_operation_node(kabsa::Parser::token::IF, 2, $3, $5); }
 	| IF LEFT_PARENTHESIS boolean_expression RIGHT_PARENTHESIS statement ELSE statement { $$ = create_operation_node(kabsa::Parser::token::IF, 3, $3, $5, $7); }
 	| FOR LEFT_PARENTHESIS assignment SEMICOLON boolean_expression SEMICOLON assignment RIGHT_PARENTHESIS statement { $$ = create_operation_node(kabsa::Parser::token::FOR, 4, $3, $5, $7, $9); }
-	| FUNCTION IDENTIFIER LEFT_PARENTHESIS identifiers RIGHT_PARENTHESIS statement {}
-	| IDENTIFIER LEFT_PARENTHESIS identifiers RIGHT_PARENTHESIS SEMICOLON {}
 	| SWITCH LEFT_PARENTHESIS expression RIGHT_PARENTHESIS LEFT_BRACES labeled_statement RIGHT_BRACES {}
 	| LEFT_BRACES statements RIGHT_BRACES { $$ = $2; }
+	;
+
+function_call
+	: IDENTIFIER LEFT_PARENTHESIS arguments RIGHT_PARENTHESIS  { $$ = create_operation_node(kabsa::Parser::token::CALL, 2, create_identifier_node($1), $3); }
 	;
 
 assignment
@@ -104,15 +110,23 @@ statements
 	| statements statement { $$ = create_operation_node(kabsa::Parser::token::SEMICOLON, 2, $1, $2); }
 	;
 
-identifiers
+parameters
 	: %empty {}
-	| identifiers COMMA IDENTIFIER
+	| IDENTIFIER { $$ = create_identifier_node($1, FUNCTION_PARAMETER_TYPE); }
+	| parameters COMMA IDENTIFIER { $$ = create_operation_node(kabsa::Parser::token::COMMA, 2, $1, create_identifier_node($3, FUNCTION_PARAMETER_TYPE)); }
+	;
+
+arguments
+	: %empty {}
+	| expression
+	| arguments COMMA expression { $$ = create_operation_node(kabsa::Parser::token::PUSH_ARGS, 2, $1, $3); }
 	;
 
 expression
 	: INTEGER { $$ = create_integer_number_node($1); }
 	| DOUBLE { $$ = create_double_number_node($1); }
 	| boolean_expression
+	| function_call
 	| IDENTIFIER { $$ = create_identifier_node($1); }
 	| MINUS expression %prec UMINUS { $$ = create_operation_node(kabsa::Parser::token::UMINUS, 1, $2); }
 	| expression PLUS expression { $$ = create_operation_node(kabsa::Parser::token::PLUS, 2, $1, $3); }
@@ -218,7 +232,13 @@ namespace kabsa
 			} break;
             case IDENTIFIER_TYPE: {
 				IdentifierNode *identifier_node = dynamic_cast<IdentifierNode *>(node);
-				std::cout << "\tPUSH\t" << identifier_node->getKey() << std::endl;
+				switch(identifier_node->getIdentifierType()) {
+					case FUNCTION_PARAMETER_TYPE: {
+						std::cout << "\tPOP\t" << identifier_node->getKey() << std::endl;
+					} break;
+					default:
+						std::cout << "\tPUSH\t" << identifier_node->getKey() << std::endl;
+				}
 			} break;
             case OPERATION_TYPE: {
 				OperationNode *operation_node = dynamic_cast<OperationNode *>(node);
@@ -271,6 +291,22 @@ namespace kabsa
 							std::cout << 'L' << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
                         }
 					} break;
+					case kabsa::Parser::token::FUNCTION: {
+						IdentifierNode *function_identifier_node = dynamic_cast<IdentifierNode *>(operation_node->getOperandNode(0));
+						std::cout << "\tPROC\t" << function_identifier_node->getKey() << std::endl;
+						generate(operation_node->getOperandNode(1));
+						generate(operation_node->getOperandNode(2));
+						std::cout << "\tENDP\t" << function_identifier_node->getKey() << std::endl;
+					} break;
+					case kabsa::Parser::token::RETURN: {
+						generate(operation_node->getOperandNode(0));
+						std::cout << "\tRET" << std::endl;
+					} break;
+					case kabsa::Parser::token::CALL: {
+						IdentifierNode *function_identifier_node = dynamic_cast<IdentifierNode *>(operation_node->getOperandNode(0));
+						generate(operation_node->getOperandNode(1));
+						std::cout << "\tCALL\t" << function_identifier_node->getKey() << std::endl;
+					} break;
                     case kabsa::Parser::token::ASSIGN: {
                         generate(operation_node->getOperandNode(1));
 						IdentifierNode *identifier_operand = dynamic_cast<IdentifierNode *>(operation_node->getOperandNode(0));
@@ -279,6 +315,10 @@ namespace kabsa
 					case kabsa::Parser::token::UMINUS: {
 						generate(operation_node->getOperandNode(0));
 						std::cout << "\tNEG" << std::endl;
+					} break;
+					case kabsa::Parser::token::PUSH_ARGS: {
+						generate(operation_node->getOperandNode(1));
+                        generate(operation_node->getOperandNode(0));
 					} break;
                     default:
                         generate(operation_node->getOperandNode(0));
