@@ -3,7 +3,6 @@
 
 
 namespace kabsa {
-    typedef enum { INTEGER_TYPE, DOUBLE_TYPE } numberEnum;
     typedef enum { CONSTANT_TYPE, VARIABLE_TYPE, FUNCTION_TYPE } identifierEnum;
     typedef enum { NUMBER_TYPE, IDENTIFIER_TYPE, OPERATION_TYPE } nodeEnum;
 
@@ -13,7 +12,6 @@ namespace kabsa {
         public:
             Node(nodeEnum node_type) : node_type(node_type) {}
             virtual ~Node() {}
-            virtual void setNodeType(nodeEnum node_type) { this->node_type = node_type; }
             virtual nodeEnum getNodeType() { return this->node_type; }
     };
 
@@ -38,20 +36,14 @@ namespace kabsa {
             void setIdentifierType(identifierEnum identifier_type) { this->identifier_type = identifier_type; }
             identifierEnum getIdentifierType() { return this->identifier_type; }
             std::string getKey() { return this->key; }
-            void setKey(std::string key) { this->key = key; }
     };
 
     template <typename T>
     class NumberNode : public Node {
         private:
             T value;
-            numberEnum number_type;
         public:
-            NumberNode(T value) : Node(NUMBER_TYPE), value(value) {
-                this->number_type = value == (int)value ? INTEGER_TYPE : DOUBLE_TYPE;
-            }
-            void setValue(T value) { this->value = value; }
-            numberEnum getNumberType() { return this->number_type; }
+            NumberNode(T value) : Node(NUMBER_TYPE), value(value) {}
             T getValue() { return this->value; }
     };
 }
