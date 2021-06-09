@@ -76,7 +76,7 @@
 %%
 
 main_program
-	:program { driver.write_outfile("assembly.asm", assembly_ss); exit(0); }
+	:program { driver.write_outfile(assembly_ss); exit(0); }
 	;
 
 program

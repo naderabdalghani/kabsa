@@ -4,7 +4,11 @@
 
 
 namespace kabsa {
-    Driver::Driver() : scanner_ (new Scanner()), parser_ (new Parser(*this)), location_ (new location()) {}
+    Driver::Driver(std::string input_file, std::string output_directory, std::string filename) : scanner_ (new Scanner()), parser_ (new Parser(*this)), location_ (new location()) {
+        this->input_file = input_file;
+        this->output_directory = output_directory;
+        this->filename = filename;
+    }
 
     Driver::~Driver() { delete parser_; delete scanner_; delete location_; }
 
@@ -27,15 +31,15 @@ namespace kabsa {
         return 0;
     }
 
-    bool Driver::write_outfile(const std::string& path, const std::stringstream& ss) {
-        std::ofstream outfile(path);
+    bool Driver::write_outfile(const std::stringstream& ss) {
+        std::ofstream outfile(output_directory + "/" + filename + ".asm");
         if(!outfile.is_open()) {
             std::cout<< "Unable to create file at the given directory" << std::endl;
             return false;
         }
         outfile<< ss.rdbuf();
         outfile.close();
-        std::cout<< "File: \""<< path << "\" Created successfully" << std::endl;
+        std::cout<< "Assembly file created at: \""<< output_directory << "\", with name: " << filename << ".asm" << std::endl;
         return true;
     }
 }
