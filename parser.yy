@@ -15,6 +15,7 @@
 	#include "driver.hh"
 	#include "location.hh"
 	#include <string>
+	#include <sstream>
 
 	namespace kabsa {
 		Node *create_integer_number_node(int value);
@@ -24,6 +25,7 @@
 		void generate(Node *node);
 		void free_node(Node *node);
 		static int last_used_label = 0;
+		static std::stringstream ss;
 	}
 }
 
@@ -75,7 +77,7 @@
 
 program
 	: %empty {}
-	| program function { generate($2); free_node($2); }
+	| program function { generate($2); driver.write_outfile("assembly.asm", ss); free_node($2);}
 	;
 
 function
@@ -225,9 +227,11 @@ namespace kabsa
 				NumberNode<double> *double_number_node = dynamic_cast<NumberNode<double> *>(node);
 				if (integer_number_node == NULL) {
 					std::cout << "\tPUSH\t" << double_number_node->getValue() << std::endl;
+					ss<< "\tPUSH\t" << double_number_node->getValue() << std::endl;
 				}
 				else {
 					std::cout << "\tPUSH\t" << integer_number_node->getValue() << std::endl;
+					ss << "\tPUSH\t" << integer_number_node->getValue() << std::endl;
 				}
 			} break;
             case IDENTIFIER_TYPE: {
@@ -246,12 +250,16 @@ namespace kabsa
                     case kabsa::Parser::token::WHILE: {
 						label_1 = last_used_label++;
 						std::cout << 'L' << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
+						ss << 'L' << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
                         generate(operation_node->getOperandNode(0));
 						label_2 = last_used_label++;
 						std::cout << "\tJNZ\tL" << std::setfill('0') << std::setw(4) << label_2 << std::endl;
+						ss << "\tJNZ\tL" << std::setfill('0') << std::setw(4) << label_2 << std::endl;
                         generate(operation_node->getOperandNode(1));
 						std::cout << "\tJMP\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
+						ss << "\tJMP\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
 						std::cout << 'L' << std::setfill('0') << std::setw(4) << label_2 << ':' << std::endl;
+						ss << 'L' << std::setfill('0') << std::setw(4) << label_2 << ':' << std::endl;
 					} break;
 					case kabsa::Parser::token::DO: {
 						label_1 = last_used_label++;
