@@ -29,10 +29,13 @@ namespace kabsa {
 
     bool Driver::write_outfile(const std::string& path, const std::stringstream& ss) {
         std::ofstream outfile(path);
-        if(!outfile.is_open())
+        if(!outfile.is_open()) {
+            std::cout<< "Unable to create file at the given directory" << std::endl;
             return false;
+        }
         outfile<< ss.rdbuf();
         outfile.close();
+        std::cout<< "File: \""<< path << "\" Created successfully" << std::endl;
         return true;
     }
 }

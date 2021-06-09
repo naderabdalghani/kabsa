@@ -25,7 +25,7 @@
 		void generate(Node *node);
 		void free_node(Node *node);
 		static int last_used_label = 0;
-		static std::stringstream ss;
+		static std::stringstream assembly_ss;
 	}
 }
 
@@ -59,7 +59,7 @@
 %token <int> INTEGER TRUE FALSE
 %token <double> DOUBLE
 %token <std::string> IDENTIFIER
-%nterm <Node *> program statements statement expression boolean_expression arguments enum_specifier enum_list enumerator assignment parameters function function_call
+%nterm <Node *> main_program program statements statement expression boolean_expression arguments enum_specifier enum_list enumerator assignment parameters function function_call
 
 %nonassoc IFX
 %nonassoc ELSE
@@ -75,9 +75,13 @@
 
 %%
 
+main_program
+	:program { driver.write_outfile("assembly.asm", assembly_ss); exit(0); }
+	;
+
 program
 	: %empty {}
-	| program function { generate($2); driver.write_outfile("assembly.asm", ss); free_node($2);}
+	| program function { generate($2); free_node($2);}
 	;
 
 function
@@ -226,22 +230,20 @@ namespace kabsa
 				NumberNode<int> *integer_number_node = dynamic_cast<NumberNode<int> *>(node);
 				NumberNode<double> *double_number_node = dynamic_cast<NumberNode<double> *>(node);
 				if (integer_number_node == NULL) {
-					std::cout << "\tPUSH\t" << double_number_node->getValue() << std::endl;
-					ss<< "\tPUSH\t" << double_number_node->getValue() << std::endl;
+					assembly_ss<< "\tPUSH\t" << double_number_node->getValue() << std::endl;
 				}
 				else {
-					std::cout << "\tPUSH\t" << integer_number_node->getValue() << std::endl;
-					ss << "\tPUSH\t" << integer_number_node->getValue() << std::endl;
+					assembly_ss << "\tPUSH\t" << integer_number_node->getValue() << std::endl;
 				}
 			} break;
             case IDENTIFIER_TYPE: {
 				IdentifierNode *identifier_node = dynamic_cast<IdentifierNode *>(node);
 				switch(identifier_node->getIdentifierType()) {
 					case FUNCTION_PARAMETER_TYPE: {
-						std::cout << "\tPOP\t" << identifier_node->getKey() << std::endl;
+						assembly_ss << "\tPOP\t" << identifier_node->getKey() << std::endl;
 					} break;
 					default:
-						std::cout << "\tPUSH\t" << identifier_node->getKey() << std::endl;
+						assembly_ss << "\tPUSH\t" << identifier_node->getKey() << std::endl;
 				}
 			} break;
             case OPERATION_TYPE: {
@@ -249,80 +251,76 @@ namespace kabsa
                 switch(operation_node->getOperatorToken()) {
                     case kabsa::Parser::token::WHILE: {
 						label_1 = last_used_label++;
-						std::cout << 'L' << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
-						ss << 'L' << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
+						assembly_ss << 'L' << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
                         generate(operation_node->getOperandNode(0));
 						label_2 = last_used_label++;
-						std::cout << "\tJNZ\tL" << std::setfill('0') << std::setw(4) << label_2 << std::endl;
-						ss << "\tJNZ\tL" << std::setfill('0') << std::setw(4) << label_2 << std::endl;
+						assembly_ss << "\tJNZ\tL" << std::setfill('0') << std::setw(4) << label_2 << std::endl;
                         generate(operation_node->getOperandNode(1));
-						std::cout << "\tJMP\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
-						ss << "\tJMP\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
-						std::cout << 'L' << std::setfill('0') << std::setw(4) << label_2 << ':' << std::endl;
-						ss << 'L' << std::setfill('0') << std::setw(4) << label_2 << ':' << std::endl;
+						assembly_ss << "\tJMP\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
+						assembly_ss << 'L' << std::setfill('0') << std::setw(4) << label_2 << ':' << std::endl;
 					} break;
 					case kabsa::Parser::token::DO: {
 						label_1 = last_used_label++;
-						std::cout << 'L' << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
+						assembly_ss << 'L' << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
                         generate(operation_node->getOperandNode(1));
                         generate(operation_node->getOperandNode(0));
-						std::cout << "\tJZ\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
+						assembly_ss << "\tJZ\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
 					} break;
 					//FOR LEFT_PARENTHESIS expression SEMICOLON boolean_expression SEMICOLON expression RIGHT_PARENTHESIS statement { $$ = create_operation_node(kabsa::Parser::token::FOR, 4, $3, $5, $7, $9); }
 					case kabsa::Parser::token::FOR: {
 						generate(operation_node->getOperandNode(0));
 						label_1 = last_used_label++;
-						std::cout << 'L' << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
+						assembly_ss << 'L' << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
 						generate(operation_node->getOperandNode(1));
                         label_2 = last_used_label++;
-						std::cout << "\tJNZ\tL" << std::setfill('0') << std::setw(4) << label_2 << std::endl;
+						assembly_ss << "\tJNZ\tL" << std::setfill('0') << std::setw(4) << label_2 << std::endl;
                         generate(operation_node->getOperandNode(3));
                         generate(operation_node->getOperandNode(2));
-						std::cout << "\tJMP\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
-						std::cout << 'L' << std::setfill('0') << std::setw(4) << label_2 << ':' << std::endl;
+						assembly_ss << "\tJMP\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
+						assembly_ss << 'L' << std::setfill('0') << std::setw(4) << label_2 << ':' << std::endl;
 					} break;
                     case kabsa::Parser::token::IF: {
                         generate(operation_node->getOperandNode(0));
                         if (operation_node->getNumberOfOperands() > 2) {
 							label_1 = last_used_label++;
-							std::cout << "\tJNZ\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
+							assembly_ss << "\tJNZ\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
                             generate(operation_node->getOperandNode(1));
 							label_2 = last_used_label++;
-							std::cout << "\tJMP\tL" << std::setfill('0') << std::setw(4) << label_2 << std::endl;
-							std::cout << 'L' << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
+							assembly_ss << "\tJMP\tL" << std::setfill('0') << std::setw(4) << label_2 << std::endl;
+							assembly_ss << 'L' << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
                             generate(operation_node->getOperandNode(2));
-							std::cout << 'L' << std::setfill('0') << std::setw(4) << label_2 << ':' << std::endl;
+							assembly_ss << 'L' << std::setfill('0') << std::setw(4) << label_2 << ':' << std::endl;
                         } else {
 							label_1 = last_used_label++;
-							std::cout << "\tJNZ\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
+							assembly_ss << "\tJNZ\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
                             generate(operation_node->getOperandNode(1));
-							std::cout << 'L' << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
+							assembly_ss << 'L' << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
                         }
 					} break;
 					case kabsa::Parser::token::FUNCTION: {
 						IdentifierNode *function_identifier_node = dynamic_cast<IdentifierNode *>(operation_node->getOperandNode(0));
-						std::cout << "\tPROC\t" << function_identifier_node->getKey() << std::endl;
+						assembly_ss << "\tPROC\t" << function_identifier_node->getKey() << std::endl;
 						generate(operation_node->getOperandNode(1));
 						generate(operation_node->getOperandNode(2));
-						std::cout << "\tENDP\t" << function_identifier_node->getKey() << std::endl;
+						assembly_ss << "\tENDP\t" << function_identifier_node->getKey() << std::endl;
 					} break;
 					case kabsa::Parser::token::RETURN: {
 						generate(operation_node->getOperandNode(0));
-						std::cout << "\tRET" << std::endl;
+						assembly_ss << "\tRET" << std::endl;
 					} break;
 					case kabsa::Parser::token::CALL: {
 						IdentifierNode *function_identifier_node = dynamic_cast<IdentifierNode *>(operation_node->getOperandNode(0));
 						generate(operation_node->getOperandNode(1));
-						std::cout << "\tCALL\t" << function_identifier_node->getKey() << std::endl;
+						assembly_ss << "\tCALL\t" << function_identifier_node->getKey() << std::endl;
 					} break;
                     case kabsa::Parser::token::ASSIGN: {
                         generate(operation_node->getOperandNode(1));
 						IdentifierNode *identifier_operand = dynamic_cast<IdentifierNode *>(operation_node->getOperandNode(0));
-						std::cout << "\tPOP\t" << identifier_operand->getKey() << std::endl;
+						assembly_ss << "\tPOP\t" << identifier_operand->getKey() << std::endl;
 					} break;
 					case kabsa::Parser::token::UMINUS: {
 						generate(operation_node->getOperandNode(0));
-						std::cout << "\tNEG" << std::endl;
+						assembly_ss << "\tNEG" << std::endl;
 					} break;
 					case kabsa::Parser::token::PUSH_ARGS: {
 						generate(operation_node->getOperandNode(1));
@@ -332,19 +330,19 @@ namespace kabsa
                         generate(operation_node->getOperandNode(0));
                         generate(operation_node->getOperandNode(1));
                         switch(operation_node->getOperatorToken()) {
-                            case kabsa::Parser::token::PLUS: std::cout << "\tADD" << std::endl; break;
-                            case kabsa::Parser::token::MINUS: std::cout << "\tSUB" << std::endl; break;
-                            case kabsa::Parser::token::MULTIPLY: std::cout << "\tMUL" << std::endl; break;
-                            case kabsa::Parser::token::DIVIDE: std::cout << "\tDIV" << std::endl; break;
-                            case kabsa::Parser::token::LT: std::cout << "\tCMPLT" << std::endl; break;
-                            case kabsa::Parser::token::GT: std::cout << "\tCMPGT" << std::endl; break;
-                            case kabsa::Parser::token::GE: std::cout << "\tCMPGE" << std::endl; break;
-                            case kabsa::Parser::token::LE: std::cout << "\tCMPLE" << std::endl; break;
-                            case kabsa::Parser::token::NE: std::cout << "\tCMPNE" << std::endl; break;
-                            case kabsa::Parser::token::EQ: std::cout << "\tCMPEQ" << std::endl; break;
-                            case kabsa::Parser::token::AND: std::cout << "\tAND" << std::endl; break;
-                            case kabsa::Parser::token::OR: std::cout << "\tOR" << std::endl; break;
-                            case kabsa::Parser::token::NOT: std::cout << "\tNOT" << std::endl; break;
+                            case kabsa::Parser::token::PLUS: assembly_ss << "\tADD" << std::endl; break;
+                            case kabsa::Parser::token::MINUS: assembly_ss << "\tSUB" << std::endl; break;
+                            case kabsa::Parser::token::MULTIPLY: assembly_ss << "\tMUL" << std::endl; break;
+                            case kabsa::Parser::token::DIVIDE: assembly_ss << "\tDIV" << std::endl; break;
+                            case kabsa::Parser::token::LT: assembly_ss << "\tCMPLT" << std::endl; break;
+                            case kabsa::Parser::token::GT: assembly_ss << "\tCMPGT" << std::endl; break;
+                            case kabsa::Parser::token::GE: assembly_ss << "\tCMPGE" << std::endl; break;
+                            case kabsa::Parser::token::LE: assembly_ss << "\tCMPLE" << std::endl; break;
+                            case kabsa::Parser::token::NE: assembly_ss << "\tCMPNE" << std::endl; break;
+                            case kabsa::Parser::token::EQ: assembly_ss << "\tCMPEQ" << std::endl; break;
+                            case kabsa::Parser::token::AND: assembly_ss << "\tAND" << std::endl; break;
+                            case kabsa::Parser::token::OR: assembly_ss << "\tOR" << std::endl; break;
+                            case kabsa::Parser::token::NOT: assembly_ss << "\tNOT" << std::endl; break;
                         }
                 }
 			} break;
