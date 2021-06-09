@@ -57,7 +57,7 @@
 %token <int> INTEGER TRUE FALSE
 %token <double> DOUBLE
 %token <std::string> IDENTIFIER
-%nterm <Node *> program statements statement expression boolean_expression identifiers enum_specifier enum_list enumerator
+%nterm <Node *> program statements statement expression boolean_expression identifiers enum_specifier enum_list enumerator assignment
 
 %nonassoc IFX
 %nonassoc ELSE
@@ -82,17 +82,21 @@ statement
 	: SEMICOLON { $$ = create_operation_node(kabsa::Parser::token::SEMICOLON, 2, NULL, NULL); }
 	| expression SEMICOLON { $$ = $1; }
 	| RETURN expression SEMICOLON { $$ = create_operation_node(kabsa::Parser::token::RETURN, 1, $2); }
-	| IDENTIFIER ASSIGN expression SEMICOLON { $$ = create_operation_node(kabsa::Parser::token::ASSIGN, 2, create_identifier_node($1), $3); }
+	| assignment SEMICOLON
 	| CONSTANT IDENTIFIER ASSIGN expression SEMICOLON { $$ = create_operation_node(kabsa::Parser::token::ASSIGN, 2, create_identifier_node($2, CONSTANT_TYPE), $4); }
 	| WHILE LEFT_PARENTHESIS boolean_expression RIGHT_PARENTHESIS statement { $$ = create_operation_node(kabsa::Parser::token::WHILE, 2, $3, $5); }
 	| DO statement WHILE LEFT_PARENTHESIS boolean_expression RIGHT_PARENTHESIS SEMICOLON { $$ = create_operation_node(kabsa::Parser::token::DO, 2, $5, $2); }
 	| IF LEFT_PARENTHESIS boolean_expression RIGHT_PARENTHESIS statement %prec IFX { $$ = create_operation_node(kabsa::Parser::token::IF, 2, $3, $5); }
 	| IF LEFT_PARENTHESIS boolean_expression RIGHT_PARENTHESIS statement ELSE statement { $$ = create_operation_node(kabsa::Parser::token::IF, 3, $3, $5, $7); }
-	| FOR LEFT_PARENTHESIS expression SEMICOLON boolean_expression SEMICOLON expression RIGHT_PARENTHESIS statement { $$ = create_operation_node(kabsa::Parser::token::FOR, 4, $3, $5, $7, $9); }
+	| FOR LEFT_PARENTHESIS assignment SEMICOLON boolean_expression SEMICOLON assignment RIGHT_PARENTHESIS statement { $$ = create_operation_node(kabsa::Parser::token::FOR, 4, $3, $5, $7, $9); }
 	| FUNCTION IDENTIFIER LEFT_PARENTHESIS identifiers RIGHT_PARENTHESIS statement {}
 	| IDENTIFIER LEFT_PARENTHESIS identifiers RIGHT_PARENTHESIS SEMICOLON {}
 	| SWITCH LEFT_PARENTHESIS expression RIGHT_PARENTHESIS LEFT_BRACES labeled_statement RIGHT_BRACES {}
 	| LEFT_BRACES statements RIGHT_BRACES { $$ = $2; }
+	;
+
+assignment
+	: IDENTIFIER ASSIGN expression { $$ = create_operation_node(kabsa::Parser::token::ASSIGN, 2, create_identifier_node($1), $3); }
 	;
 
 statements
@@ -235,6 +239,19 @@ namespace kabsa
                         generate(operation_node->getOperandNode(1));
                         generate(operation_node->getOperandNode(0));
 						std::cout << "\tJZ\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
+					} break;
+					//FOR LEFT_PARENTHESIS expression SEMICOLON boolean_expression SEMICOLON expression RIGHT_PARENTHESIS statement { $$ = create_operation_node(kabsa::Parser::token::FOR, 4, $3, $5, $7, $9); }
+					case kabsa::Parser::token::FOR: {
+						generate(operation_node->getOperandNode(0));
+						label_1 = last_used_label++;
+						std::cout << 'L' << std::setfill('0') << std::setw(4) << label_1 << ':' << std::endl;
+						generate(operation_node->getOperandNode(1));
+                        label_2 = last_used_label++;
+						std::cout << "\tJNZ\tL" << std::setfill('0') << std::setw(4) << label_2 << std::endl;
+                        generate(operation_node->getOperandNode(3));
+                        generate(operation_node->getOperandNode(2));
+						std::cout << "\tJMP\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
+						std::cout << 'L' << std::setfill('0') << std::setw(4) << label_2 << ':' << std::endl;
 					} break;
                     case kabsa::Parser::token::IF: {
                         generate(operation_node->getOperandNode(0));
