@@ -27,6 +27,7 @@
 		Node *get_identifier_node(const location& l, std::string key, std::vector<identifierEnum> valid_identifier_types);
 		Node *create_operation_node(int operation_token, int num_of_operands, ...);
 		void generate(Node *node);
+        bool write_symbol_table_file();
 		bool isValidType(identifierEnum identifier_type, std::vector<identifierEnum> valid_identifier_types);
 		static int last_used_label = 0;
 		static std::stringstream assembly_ss;
@@ -81,7 +82,7 @@
 %%
 
 main_program
-	:program { driver.write_outfile(assembly_ss); exit(0); }
+	:program { driver.write_outfile(assembly_ss); write_symbol_table_file(); exit(0); }
 	;
 
 program
@@ -477,5 +478,30 @@ namespace kabsa
                 }
 			} break;
         }
+    }
+
+	bool write_symbol_table_file() {
+        // std::ofstream outfile(output_directory + "/" + filename + "_symbol_table.txt");
+        // if(!outfile.is_open()) {
+        //     std::cout<< "Unable to create file at the given directory" << std::endl;
+        //     return false;
+        // }
+        // std::stringstream ss;
+        std::cout<<"----------------------------------------------------------------------------------------\n";
+        std::cout<<"|          Variable          |            Type            |         Initialized        |\n";
+        std::cout<<"----------------------------------------------------------------------------------------\n";
+
+        for (std::pair<std::string, IdentifierNode*> element : symbol_table)
+        {
+            //std::cout << element.first << " :: " << element.second << std::endl;
+            std::cout << "|"<<std::setfill(' ') << std::setw(15) << element.first << std::setfill(' ') << std::setw(14) << "|" << 
+            std::setfill(' ') << std::setw(18) << identifierTypeAsString(element.second->getIdentifierType()) << std::setfill(' ') << std::setw(11) << "|"
+            << std::setfill(' ') << std::setw(15) << element.second->isInitialized() << std::setfill(' ') << std::setw(14) << "|" << std::endl;
+            std::cout<<"----------------------------------------------------------------------------------------\n";
+        }
+        // outfile<< ss.rdbuf();
+        // outfile.close();
+        // std::cout<< "Symbol table file created at: \""<< output_directory << "\", with name: \"" << filename << "_symbol_table.txt\"" << std::endl;
+        return true;
     }
 }
