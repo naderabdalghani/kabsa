@@ -5,7 +5,6 @@
 #include <string>
 #include <iostream>
 #include <fstream>
-#include <unordered_map>
 #include <sstream>
 
 namespace kabsa {
@@ -15,7 +14,6 @@ namespace kabsa {
 
     class Driver {
         public:
-	        // std::unordered_map<std::string, Node> symbol_table;
 
             Driver();
             ~Driver();

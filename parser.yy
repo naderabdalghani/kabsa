@@ -17,6 +17,7 @@
 	#include <string>
 	#include <sstream>
 	#include <algorithm>
+	#include <unordered_map>
 
 	namespace kabsa {
 		Node *create_integer_number_node(int value);
@@ -27,6 +28,7 @@
 		void free_node(Node *node);
 		static int last_used_label = 0;
 		static std::stringstream ss;
+	    static std::unordered_map<std::string, IdentifierNode*> symbol_table;
 	}
 }
 
