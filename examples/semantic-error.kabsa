@@ -1,6 +1,6 @@
 function main()
 {
-  x = 10;
-  a = 10.5;
+  const x = 10;
+  a = 9;
   x = a;
 }
