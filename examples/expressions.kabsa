@@ -5,5 +5,5 @@ function main()
   z = x / y - x;
   a = true;
   b = false;
-  c = a && b;
+  c = a & b;
 }
