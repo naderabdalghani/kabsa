@@ -35,64 +35,209 @@ eol     [\n\r]+
 
 {blank} STEP();
 
-{eol} LINE(yyleng);
+{eol} LINE(yyleng / 2);
 
-">=" return kabsa::Parser::token::GE;
-"<=" return kabsa::Parser::token::LE;
-"==" return kabsa::Parser::token::EQ;
-"!=" return kabsa::Parser::token::NE;
-"+"  return kabsa::Parser::token::PLUS;
-"-"  return kabsa::Parser::token::MINUS;
-"*"  return kabsa::Parser::token::MULTIPLY;
-"/"  return kabsa::Parser::token::DIVIDE;
-";"  return kabsa::Parser::token::SEMICOLON;
-","  return kabsa::Parser::token::COMMA;
-":"  return kabsa::Parser::token::COLON;
-"("  return kabsa::Parser::token::LEFT_PARENTHESIS;
-")"  return kabsa::Parser::token::RIGHT_PARENTHESIS;
-"{"  return kabsa::Parser::token::LEFT_BRACES;
-"}"  return kabsa::Parser::token::RIGHT_BRACES;
-"="  return kabsa::Parser::token::ASSIGN;
-">" return kabsa::Parser::token::GT;
-"<" return kabsa::Parser::token::LT;
-"&" return kabsa::Parser::token::AND;
-"|" return kabsa::Parser::token::OR;
-"!" return kabsa::Parser::token::NOT;
-"const" return kabsa::Parser::token::CONSTANT;
-"enum" return kabsa::Parser::token::ENUM;
-"while" return kabsa::Parser::token::WHILE;
-"if" return kabsa::Parser::token::IF;
-"else" return kabsa::Parser::token::ELSE;
-"do" return kabsa::Parser::token::DO;
-"for" return kabsa::Parser::token::FOR;
-"switch" return kabsa::Parser::token::SWITCH;
-"function" return kabsa::Parser::token::FUNCTION;
-"true" return kabsa::Parser::token::TRUE;
-"false" return kabsa::Parser::token::FALSE;
-"return" return kabsa::Parser::token::RETURN;
-"case" return kabsa::Parser::token::CASE;
-"break" return kabsa::Parser::token::BREAK;
-"default" return kabsa::Parser::token::DEFAULT;
+">=" {
+	STEP();
+	return kabsa::Parser::token::GE;
+}
+
+"<=" {
+	STEP();
+	return kabsa::Parser::token::LE;
+}
+
+"==" {
+	STEP();
+	return kabsa::Parser::token::EQ;
+}
+
+"!=" {
+	STEP();
+	return kabsa::Parser::token::NE;
+}
+
+"+"  {
+	STEP();
+	return kabsa::Parser::token::PLUS;
+}
+
+"-"  {
+	STEP();
+	return kabsa::Parser::token::MINUS;
+}
+
+"*"  {
+	STEP();
+	return kabsa::Parser::token::MULTIPLY;
+}
+
+"/"  {
+	STEP();
+	return kabsa::Parser::token::DIVIDE;
+}
+
+";"  {
+	STEP();
+	return kabsa::Parser::token::SEMICOLON;
+}
+
+","  {
+	STEP();
+	return kabsa::Parser::token::COMMA;
+}
+
+":"  {
+	STEP();
+	return kabsa::Parser::token::COLON;
+}
+
+"("  {
+	STEP();
+	return kabsa::Parser::token::LEFT_PARENTHESIS;
+}
+
+")"  {
+	STEP();
+	return kabsa::Parser::token::RIGHT_PARENTHESIS;
+}
+
+"{"  {
+	STEP();
+	return kabsa::Parser::token::LEFT_BRACES;
+}
+
+"}"  {
+	STEP();
+	return kabsa::Parser::token::RIGHT_BRACES;
+}
+
+"="  {
+	STEP();
+	return kabsa::Parser::token::ASSIGN;
+}
+
+">" {
+	STEP();
+	return kabsa::Parser::token::GT;
+}
+
+"<" {
+	STEP();
+	return kabsa::Parser::token::LT;
+}
+
+"&" {
+	STEP();
+	return kabsa::Parser::token::AND;
+}
+
+"|" {
+	STEP();
+	return kabsa::Parser::token::OR;
+}
+
+"!" {
+	STEP();
+	return kabsa::Parser::token::NOT;
+}
+
+"const" {
+	STEP();
+	return kabsa::Parser::token::CONSTANT;
+}
+
+"enum" {
+	STEP();
+	return kabsa::Parser::token::ENUM;
+}
+
+"while" {
+	STEP();
+	return kabsa::Parser::token::WHILE;
+}
+
+"if" {
+	STEP();
+	return kabsa::Parser::token::IF;
+}
+
+"else" {
+	STEP();
+	return kabsa::Parser::token::ELSE;
+}
+
+"do" {
+	STEP();
+	return kabsa::Parser::token::DO;
+}
+
+"for" {
+	STEP();
+	return kabsa::Parser::token::FOR;
+}
+
+"switch" {
+	STEP();
+	return kabsa::Parser::token::SWITCH;
+}
+
+"function" {
+	STEP();
+	return kabsa::Parser::token::FUNCTION;
+}
+
+"true" {
+	STEP();
+	return kabsa::Parser::token::TRUE;
+}
+
+"false" {
+	STEP();
+	return kabsa::Parser::token::FALSE;
+}
+
+"return" {
+	STEP();
+	return kabsa::Parser::token::RETURN;
+}
+
+"case" {
+	STEP();
+	return kabsa::Parser::token::CASE;
+}
+
+"break" {
+	STEP();
+	return kabsa::Parser::token::BREAK;
+}
+
+"default" {
+	STEP();
+	return kabsa::Parser::token::DEFAULT;
+}
 
 [+-]?([0-9]*[.])[0-9]+ {
+	STEP();
     yylval->emplace<double>(atof(yytext));
     return kabsa::Parser::token::DOUBLE;
 }
 
 [0-9]+ {
+	STEP();
     yylval->emplace<int>(atoi(yytext));
     return kabsa::Parser::token::INTEGER;
 }
 
 [a-zA-Z][a-zA-Z0-9_]* {
+	STEP();
     yylval->emplace<std::string>(yytext);
     return kabsa::Parser::token::IDENTIFIER;
 }
 
 . {
 	std::cerr << *driver.location_ << " Unexpected token : " << *yytext << std::endl;
-	driver.error_ = (driver.error_ == 127 ? 127 : driver.error_ + 1);
-	STEP ();
+	exit(0);
 }
 
 %%

@@ -29,7 +29,6 @@ namespace kabsa {
             Scanner*      scanner_;
             Parser*       parser_;
             location*     location_;
-            int           error_;
 
             friend class  Parser;
             friend class  Scanner;
