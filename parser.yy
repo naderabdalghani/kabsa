@@ -40,8 +40,8 @@
 	namespace kabsa {
 		class Driver;
 
-		inline void yyerror (const char* msg) {
-			std::cerr << msg << std::endl;
+		inline void yyerror (const location& l, const char* msg) {
+        	std::cerr << l << ": " << msg << std::endl; exit(1);
 		}
 	}
 }
@@ -87,7 +87,7 @@ main_program
 
 program
 	: %empty {}
-	| program function { generate($2); free_node($2);}
+	| program function_declaration { generate($2); free_node($2);}
 	;
 
 function_declaration
@@ -227,9 +227,7 @@ namespace kabsa
 		auto iterator = symbol_table.find(key);
 		if (identifier_type == VARIABLE_TYPE && iterator != symbol_table.end()) {
 			if (iterator->second->getIdentifierType() == CONSTANT_TYPE) {
-				/* yyerror("Cannot reassign value to constant variable"); */
-				std::cerr << l << ": " << "Cannot reassign value to constant variable" << std::endl;
-				exit(1);
+				yyerror(l, "Cannot reassign value to constant variable");
 			}
 		}
 		IdentifierNode *node = new IdentifierNode(key, identifier_type, assignment);
@@ -278,13 +276,13 @@ namespace kabsa
 		}
 		else {
 			if (isValidType(FUNCTION_TYPE, valid_identifier_types)) {
-				std::cerr << l << ": " << "Undeclared function used" << std::endl; exit(1);
+				std::cerr << l << ": " << "Undeclared " << identifierTypeAsString(FUNCTION_TYPE) << " used" << std::endl; exit(1);
 			}
 			else if (isValidType(CONSTANT_TYPE, valid_identifier_types) && !isValidType(VARIABLE_TYPE, valid_identifier_types)) {
-				std::cerr << l << ": " << "Undeclared constant used" << std::endl; exit(1);
+				std::cerr << l << ": " << "Undeclared " << identifierTypeAsString(CONSTANT_TYPE) << " used" << std::endl; exit(1);
 			}
 			else {
-				std::cerr << l << ": " << "Undeclared variable used" << std::endl; exit(1);
+				std::cerr << l << ": " << "Undeclared " << identifierTypeAsString(VARIABLE_TYPE) << " used" << std::endl; exit(1);
 			}
 		}
 		return NULL;
@@ -387,7 +385,7 @@ namespace kabsa
 						if (operation_node->getNumberOfOperands() > 0) {
 							generate(operation_node->getOperandNode(0));
 						}
-						std::cout << "\tRET" << std::endl;
+						assembly_ss << "\tRET" << std::endl;
 					} break;
 					case kabsa::Parser::token::CALL: {
 						IdentifierNode *function_identifier_node = dynamic_cast<IdentifierNode *>(operation_node->getOperandNode(0));
@@ -422,36 +420,36 @@ namespace kabsa
 								case kabsa::Parser::token::CASE: {
 									generate(operation_node->getOperandNode(0));
 									generate(labeled_statements[i]->getOperandNode(0));
-									std::cout << "\tCMPEQ" << std::endl;
+									assembly_ss << "\tCMPEQ" << std::endl;
 									label_1 = last_used_label++;
-									std::cout << "\tJZ\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
+									assembly_ss << "\tJZ\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
 									switch_labels.push_back(label_1);
 								} break;
 							}
 						}
 						label_1 = last_used_label++;
-						std::cout << "\tJMP\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
+						assembly_ss << "\tJMP\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
 						switch_labels.push_back(label_1);
 						int break_label = last_used_label++;
 						int label_index = 0;
 						for (int i = 0; i < labeled_statements.size(); i++) {
 							switch(labeled_statements[i]->getOperatorToken()) {
 								case kabsa::Parser::token::CASE: {
-									std::cout << 'L' << std::setfill('0') << std::setw(4) << switch_labels[label_index++] << ':' << std::endl;
+									assembly_ss << 'L' << std::setfill('0') << std::setw(4) << switch_labels[label_index++] << ':' << std::endl;
 									generate(labeled_statements[i]->getOperandNode(1));
 								} break;
 								case kabsa::Parser::token::DEFAULT: {
-									std::cout << 'L' << std::setfill('0') << std::setw(4) << switch_labels[label_index++] << ':' << std::endl;
+									assembly_ss << 'L' << std::setfill('0') << std::setw(4) << switch_labels[label_index++] << ':' << std::endl;
 									if (labeled_statements[i]->getNumberOfOperands() > 0) {
 										generate(labeled_statements[i]->getOperandNode(0));
 									}
 								} break;
 								case kabsa::Parser::token::BREAK: {
-									std::cout << "\tJMP\tL" << std::setfill('0') << std::setw(4) << break_label << std::endl;
+									assembly_ss << "\tJMP\tL" << std::setfill('0') << std::setw(4) << break_label << std::endl;
 								} break;
 							}
 						}
-						std::cout << 'L' << std::setfill('0') << std::setw(4) << break_label << ':' << std::endl;
+						assembly_ss << 'L' << std::setfill('0') << std::setw(4) << break_label << ':' << std::endl;
 					} break;
                     default:
                         generate(operation_node->getOperandNode(0));
