@@ -253,6 +253,10 @@ namespace kabsa
 				return "constant variable";
 			case FUNCTION_TYPE:
 				return "function";
+			case ENUM_TYPE:
+				return "enumerator";
+			case ENUM_SPECIFIER:
+				return "enumerator specifier";
 			default:
 				return "variable";
 		}
