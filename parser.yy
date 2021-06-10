@@ -228,6 +228,9 @@ namespace kabsa
 			if (iterator->second->getIdentifierType() == CONSTANT_TYPE) {
 				yyerror(l, "Cannot reassign value to constant variable");
 			}
+			if (!assignment) {
+				std::cerr << l << ": " << identifierTypeAsString(iterator->second->getIdentifierType()) + " redeclaration" << std::endl; exit(1);
+			}
 		}
 		IdentifierNode *node = new IdentifierNode(key, identifier_type, assignment);
 		symbol_table[key] = node;
