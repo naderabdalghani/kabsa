@@ -32,7 +32,6 @@ namespace kabsa {
             Scanner*      scanner_;
             Parser*       parser_;
             location*     location_;
-            int           error_;
             std::string   output_directory;
             std::string   input_file;
             std::string   filename;
