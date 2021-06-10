@@ -1,10 +1,9 @@
-enum day_of_the_week
-{
-  Mon,
-  Sun
-};
-
 function main()
 {
+  enum day_of_the_week
+  {
+    Mon,
+    Sun
+  };
   x = Tue;
 }
