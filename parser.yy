@@ -17,16 +17,21 @@
 	#include <string>
 	#include <sstream>
 	#include <algorithm>
+	#include <unordered_map>
 
 	namespace kabsa {
 		Node *create_integer_number_node(int value);
 		Node *create_double_number_node(double value);
-		Node *create_identifier_node(std::string key, identifierEnum identifier_type = VARIABLE_TYPE);
+		Node *create_identifier_node(const location& l, std::string key, identifierEnum identifier_type = VARIABLE_TYPE, bool assignment = true);
+		std::string identifierTypeAsString(identifierEnum identifier_type);
+		Node *get_identifier_node(const location& l, std::string key, std::vector<identifierEnum> valid_identifier_types);
 		Node *create_operation_node(int operation_token, int num_of_operands, ...);
-		void generate(Node *node, int break_label=-1);
+		void generate(Node *node);
 		void free_node(Node *node);
+		bool isValidType(identifierEnum identifier_type, std::vector<identifierEnum> valid_identifier_types);
 		static int last_used_label = 0;
 		static std::stringstream assembly_ss;
+	    static std::unordered_map<std::string, IdentifierNode*> symbol_table;
 	}
 }
 
@@ -36,7 +41,7 @@
 		class Driver;
 
 		inline void yyerror (const char* msg) {
-		std::cerr << msg << std::endl;
+			std::cerr << msg << std::endl;
 		}
 	}
 }
@@ -60,7 +65,7 @@
 %token <int> INTEGER TRUE FALSE
 %token <double> DOUBLE
 %token <std::string> IDENTIFIER
-%nterm <Node *> main_program program statements statement expression boolean_expression arguments enum_specifier enum_list enumerator assignment parameters function function_call constant_expression labeled_statement labeled_statements
+%nterm <Node *> main_program program statements statement expression boolean_expression arguments enum_specifier enum_list enumerator variable_assignment constant_assignment parameters function_declaration function_call constant_expression labeled_statement labeled_statements variable_declaration constant_declaration
 
 %nonassoc IFX
 %nonassoc ELSE
@@ -85,31 +90,45 @@ program
 	| program function { generate($2); free_node($2);}
 	;
 
-function
-	: FUNCTION IDENTIFIER LEFT_PARENTHESIS parameters RIGHT_PARENTHESIS statement { $$ = create_operation_node(kabsa::Parser::token::FUNCTION, 3, create_identifier_node($2, FUNCTION_TYPE), $4, $6); }
+function_declaration
+	: FUNCTION IDENTIFIER LEFT_PARENTHESIS parameters RIGHT_PARENTHESIS statement { $$ = create_operation_node(kabsa::Parser::token::FUNCTION, 3, create_identifier_node(*driver.location_, $2, FUNCTION_TYPE), $4, $6); }
 	;
 
 statement
 	: SEMICOLON { $$ = create_operation_node(kabsa::Parser::token::SEMICOLON, 2, NULL, NULL); }
-	| expression SEMICOLON { $$ = $1; }
 	| RETURN expression SEMICOLON { $$ = create_operation_node(kabsa::Parser::token::RETURN, 1, $2); }
-	| assignment SEMICOLON
-	| CONSTANT IDENTIFIER ASSIGN expression SEMICOLON { $$ = create_operation_node(kabsa::Parser::token::ASSIGN, 2, create_identifier_node($2, CONSTANT_TYPE), $4); }
+	| RETURN SEMICOLON { $$ = create_operation_node(kabsa::Parser::token::RETURN, 0); }
+	| variable_assignment SEMICOLON
+	| constant_assignment SEMICOLON
+	| variable_declaration
+	| constant_declaration
 	| WHILE LEFT_PARENTHESIS boolean_expression RIGHT_PARENTHESIS statement { $$ = create_operation_node(kabsa::Parser::token::WHILE, 2, $3, $5); }
 	| DO statement WHILE LEFT_PARENTHESIS boolean_expression RIGHT_PARENTHESIS SEMICOLON { $$ = create_operation_node(kabsa::Parser::token::DO, 2, $5, $2); }
 	| IF LEFT_PARENTHESIS boolean_expression RIGHT_PARENTHESIS statement %prec IFX { $$ = create_operation_node(kabsa::Parser::token::IF, 2, $3, $5); }
 	| IF LEFT_PARENTHESIS boolean_expression RIGHT_PARENTHESIS statement ELSE statement { $$ = create_operation_node(kabsa::Parser::token::IF, 3, $3, $5, $7); }
-	| FOR LEFT_PARENTHESIS assignment SEMICOLON boolean_expression SEMICOLON assignment RIGHT_PARENTHESIS statement { $$ = create_operation_node(kabsa::Parser::token::FOR, 4, $3, $5, $7, $9); }
+	| FOR LEFT_PARENTHESIS variable_assignment SEMICOLON boolean_expression SEMICOLON variable_assignment RIGHT_PARENTHESIS statement { $$ = create_operation_node(kabsa::Parser::token::FOR, 4, $3, $5, $7, $9); }
 	| SWITCH LEFT_PARENTHESIS expression RIGHT_PARENTHESIS LEFT_BRACES labeled_statements RIGHT_BRACES { $$ = create_operation_node(kabsa::Parser::token::SWITCH, 2, $3, $6); }
 	| LEFT_BRACES statements RIGHT_BRACES { $$ = $2; }
 	;
 
 function_call
-	: IDENTIFIER LEFT_PARENTHESIS arguments RIGHT_PARENTHESIS  { $$ = create_operation_node(kabsa::Parser::token::CALL, 2, create_identifier_node($1), $3); }
+	: IDENTIFIER LEFT_PARENTHESIS arguments RIGHT_PARENTHESIS  { $$ = create_operation_node(kabsa::Parser::token::CALL, 2, get_identifier_node(*driver.location_, $1, std::vector<identifierEnum> {FUNCTION_TYPE}), $3); }
 	;
 
-assignment
-	: IDENTIFIER ASSIGN expression { $$ = create_operation_node(kabsa::Parser::token::ASSIGN, 2, create_identifier_node($1), $3); }
+variable_assignment
+	: IDENTIFIER ASSIGN expression { $$ = create_operation_node(kabsa::Parser::token::ASSIGN, 2, create_identifier_node(*driver.location_, $1, VARIABLE_TYPE), $3); }
+	;
+
+constant_assignment
+	: CONSTANT IDENTIFIER ASSIGN expression { $$ = create_operation_node(kabsa::Parser::token::ASSIGN, 2, create_identifier_node(*driver.location_, $2, CONSTANT_TYPE), $4); }
+	;
+
+variable_declaration
+	: IDENTIFIER SEMICOLON { $$ = create_identifier_node(*driver.location_, $1, VARIABLE_TYPE, false); }
+	;
+
+constant_declaration
+	: CONSTANT IDENTIFIER SEMICOLON { $$ = create_identifier_node(*driver.location_, $2, CONSTANT_TYPE, false); }
 	;
 
 statements
@@ -119,8 +138,8 @@ statements
 
 parameters
 	: %empty {}
-	| IDENTIFIER { $$ = create_identifier_node($1, FUNCTION_PARAMETER_TYPE); }
-	| parameters COMMA IDENTIFIER { $$ = create_operation_node(kabsa::Parser::token::COMMA, 2, $1, create_identifier_node($3, FUNCTION_PARAMETER_TYPE)); }
+	| IDENTIFIER { $$ = create_identifier_node(*driver.location_, $1, FUNCTION_PARAMETER_TYPE); }
+	| parameters COMMA IDENTIFIER { $$ = create_operation_node(kabsa::Parser::token::COMMA, 2, $1, create_identifier_node(*driver.location_, $3, FUNCTION_PARAMETER_TYPE)); }
 	;
 
 arguments
@@ -134,7 +153,7 @@ expression
 	| DOUBLE { $$ = create_double_number_node($1); }
 	| boolean_expression
 	| function_call
-	| IDENTIFIER { $$ = create_identifier_node($1); }
+	| IDENTIFIER { $$ = get_identifier_node(*driver.location_, $1, std::vector<identifierEnum> {CONSTANT_TYPE, VARIABLE_TYPE, FUNCTION_PARAMETER_TYPE}); }
 	| MINUS expression %prec UMINUS { $$ = create_operation_node(kabsa::Parser::token::UMINUS, 1, $2); }
 	| expression PLUS expression { $$ = create_operation_node(kabsa::Parser::token::PLUS, 2, $1, $3); }
 	| expression MINUS expression { $$ = create_operation_node(kabsa::Parser::token::MINUS, 2, $1, $3); }
@@ -157,24 +176,19 @@ labeled_statement
 
 constant_expression
 	: INTEGER { $$ = create_integer_number_node($1); }
-	| IDENTIFIER { $$ = create_identifier_node($1); }
+	| IDENTIFIER { $$ = get_identifier_node(*driver.location_, $1, std::vector<identifierEnum> {CONSTANT_TYPE}); }
 	;
 
-enum_specifier
+/* enum_specifier
 	: ENUM LEFT_BRACES enum_list RIGHT_BRACES {}
 	| ENUM IDENTIFIER LEFT_BRACES enum_list RIGHT_BRACES {}
 	| ENUM IDENTIFIER LEFT_BRACES RIGHT_BRACES {}
 	;
 
 enum_list
-	: enumerator
-	| enum_list COMMA enumerator
-	;
-
-enumerator
-	: IDENTIFIER  {}
-	| IDENTIFIER ASSIGN expression  {}
-	;
+	: IDENTIFIER
+	| enum_list COMMA IDENTIFIER
+	; */
 
 boolean_expression
 	: TRUE { $$ = create_integer_number_node(1); }
@@ -195,8 +209,7 @@ boolean_expression
 
 namespace kabsa
 {
-    void Parser::error(const location&, const std::string& m)
-    {
+    void Parser::error(const location& l, const std::string& m) {
         std::cerr << *driver.location_ << ": " << m << std::endl;
     }
 
@@ -210,10 +223,72 @@ namespace kabsa
 		return node;
     }
 
-    Node *create_identifier_node(std::string key, identifierEnum identifier_type) {
-		IdentifierNode *node = new IdentifierNode(identifier_type, key);
+    Node *create_identifier_node(const location& l, std::string key, identifierEnum identifier_type, bool assignment) {
+		auto iterator = symbol_table.find(key);
+		if (identifier_type == VARIABLE_TYPE && iterator != symbol_table.end()) {
+			if (iterator->second->getIdentifierType() == CONSTANT_TYPE) {
+				/* yyerror("Cannot reassign value to constant variable"); */
+				std::cerr << l << ": " << "Cannot reassign value to constant variable" << std::endl;
+				exit(1);
+			}
+		}
+		IdentifierNode *node = new IdentifierNode(key, identifier_type, assignment);
+		symbol_table[key] = node;
         return node;
     }
+
+	bool isValidType(identifierEnum identifier_type, std::vector<identifierEnum> valid_identifier_types) {
+		auto iterator = std::find(valid_identifier_types.begin(), valid_identifier_types.end(), identifier_type);
+		if (iterator != valid_identifier_types.end()) {
+			return true;
+		}
+		return false;
+	}
+
+	std::string identifierTypeAsString(identifierEnum identifier_type) {
+		switch(identifier_type) {
+			case CONSTANT_TYPE:
+				return "constant variable";
+			case VARIABLE_TYPE:
+				return "variable";
+			case FUNCTION_TYPE:
+				return "function";
+			default:
+				return "";
+		}
+	}
+
+	Node *get_identifier_node(const location& l, std::string key, std::vector<identifierEnum> valid_identifier_types) {
+		auto iterator = symbol_table.find(key);
+		if (iterator != symbol_table.end()) {
+			IdentifierNode *node = iterator->second;
+			if (not isValidType(node->getIdentifierType(), valid_identifier_types)) {
+				std::string valid_types_as_strings;
+				std::string separator = " or ";
+				for(identifierEnum valid_type : valid_identifier_types) {
+					valid_types_as_strings = valid_types_as_strings + identifierTypeAsString(valid_type) + separator;
+				}
+				valid_types_as_strings = valid_types_as_strings.substr(0, valid_types_as_strings.length() - separator.length());
+				std::cerr << l << ": " << "Cannot use " << identifierTypeAsString(node->getIdentifierType()) << " as a " << valid_types_as_strings << std::endl; exit(1);
+			}
+			if (!node->isInitialized()){
+				std::cerr << l << ": " << "Uninitialized " + identifierTypeAsString(node->getIdentifierType()) + " used" << std::endl; exit(1);
+			}
+			return node;
+		}
+		else {
+			if (isValidType(FUNCTION_TYPE, valid_identifier_types)) {
+				std::cerr << l << ": " << "Undeclared function used" << std::endl; exit(1);
+			}
+			else if (isValidType(CONSTANT_TYPE, valid_identifier_types) && !isValidType(VARIABLE_TYPE, valid_identifier_types)) {
+				std::cerr << l << ": " << "Undeclared constant used" << std::endl; exit(1);
+			}
+			else {
+				std::cerr << l << ": " << "Undeclared variable used" << std::endl; exit(1);
+			}
+		}
+		return NULL;
+	}
 
     Node *create_operation_node(int operation_token, int num_of_operands, ...) {
         va_list arguments_list;
@@ -227,7 +302,7 @@ namespace kabsa
         return node;
     }
 
-    void generate(Node *node, int break_label) {
+    void generate(Node *node) {
         int label_1, label_2;
         if (!node) return;
         switch(node->getNodeType()) {
@@ -309,8 +384,10 @@ namespace kabsa
 						assembly_ss << "\tENDP\t" << function_identifier_node->getKey() << std::endl;
 					} break;
 					case kabsa::Parser::token::RETURN: {
-						generate(operation_node->getOperandNode(0));
-						assembly_ss << "\tRET" << std::endl;
+						if (operation_node->getNumberOfOperands() > 0) {
+							generate(operation_node->getOperandNode(0));
+						}
+						std::cout << "\tRET" << std::endl;
 					} break;
 					case kabsa::Parser::token::CALL: {
 						IdentifierNode *function_identifier_node = dynamic_cast<IdentifierNode *>(operation_node->getOperandNode(0));

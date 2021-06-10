@@ -31,8 +31,14 @@ namespace kabsa {
         private:
             identifierEnum identifier_type;
             std::string key;
+            bool initialized;
         public:
-            IdentifierNode(identifierEnum identifier_type, std::string key) : Node(IDENTIFIER_TYPE), identifier_type(identifier_type), key(key) {}
+            IdentifierNode(std::string key, identifierEnum identifier_type, bool initialized) 
+            : Node(IDENTIFIER_TYPE),
+            identifier_type(identifier_type),
+            key(key),
+            initialized(initialized) {}
+            bool isInitialized() { return this-> initialized; }
             void setIdentifierType(identifierEnum identifier_type) { this->identifier_type = identifier_type; }
             identifierEnum getIdentifierType() { return this->identifier_type; }
             std::string getKey() { return this->key; }

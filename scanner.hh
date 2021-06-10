@@ -6,7 +6,7 @@
 
 
 # ifndef YY_DECL
-#  define YY_DECL kabsa::Parser::token_type kabsa::Scanner::yylex(kabsa::Parser::semantic_type* yylval, kabsa::Parser::location_type*, kabsa::Driver& driver)
+#  define YY_DECL kabsa::Parser::token_type kabsa::Scanner::yylex(kabsa::Parser::semantic_type* yylval, kabsa::Parser::location_type* l, kabsa::Driver& driver)
 # endif
 
 
