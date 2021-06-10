@@ -65,7 +65,7 @@
 %token <int> INTEGER TRUE FALSE
 %token <double> DOUBLE
 %token <std::string> IDENTIFIER
-%nterm <Node *> main_program program statements statement expression boolean_expression arguments enum_specifier enum_list enumerator variable_assignment constant_assignment parameters function_declaration function_call constant_expression labeled_statement labeled_statements variable_declaration constant_declaration
+%nterm <Node *> main_program program statements statement expression boolean_expression arguments enum_specifier enum_list variable_assignment constant_assignment parameters function_declaration function_call constant_expression labeled_statement labeled_statements variable_declaration constant_declaration
 
 %nonassoc IFX
 %nonassoc ELSE
@@ -101,6 +101,7 @@ statement
 	| variable_assignment SEMICOLON
 	| constant_assignment SEMICOLON
 	| variable_declaration
+	| enum_specifier SEMICOLON
 	| constant_declaration
 	| WHILE LEFT_PARENTHESIS boolean_expression RIGHT_PARENTHESIS statement { $$ = create_operation_node(kabsa::Parser::token::WHILE, 2, $3, $5); }
 	| DO statement WHILE LEFT_PARENTHESIS boolean_expression RIGHT_PARENTHESIS SEMICOLON { $$ = create_operation_node(kabsa::Parser::token::DO, 2, $5, $2); }
@@ -153,7 +154,7 @@ expression
 	| DOUBLE { $$ = create_double_number_node($1); }
 	| boolean_expression
 	| function_call
-	| IDENTIFIER { $$ = get_identifier_node(*driver.location_, $1, std::vector<identifierEnum> {CONSTANT_TYPE, VARIABLE_TYPE, FUNCTION_PARAMETER_TYPE}); }
+	| IDENTIFIER { $$ = get_identifier_node(*driver.location_, $1, std::vector<identifierEnum> {CONSTANT_TYPE, VARIABLE_TYPE, FUNCTION_PARAMETER_TYPE, ENUM_TYPE}); }
 	| MINUS expression %prec UMINUS { $$ = create_operation_node(kabsa::Parser::token::UMINUS, 1, $2); }
 	| expression PLUS expression { $$ = create_operation_node(kabsa::Parser::token::PLUS, 2, $1, $3); }
 	| expression MINUS expression { $$ = create_operation_node(kabsa::Parser::token::MINUS, 2, $1, $3); }
@@ -176,19 +177,19 @@ labeled_statement
 
 constant_expression
 	: INTEGER { $$ = create_integer_number_node($1); }
-	| IDENTIFIER { $$ = get_identifier_node(*driver.location_, $1, std::vector<identifierEnum> {CONSTANT_TYPE}); }
+	| IDENTIFIER { $$ = get_identifier_node(*driver.location_, $1, std::vector<identifierEnum> {CONSTANT_TYPE, ENUM_TYPE}); }
 	;
 
-/* enum_specifier
-	: ENUM LEFT_BRACES enum_list RIGHT_BRACES {}
-	| ENUM IDENTIFIER LEFT_BRACES enum_list RIGHT_BRACES {}
-	| ENUM IDENTIFIER LEFT_BRACES RIGHT_BRACES {}
+enum_specifier
+	: ENUM LEFT_BRACES enum_list RIGHT_BRACES { $$ = create_operation_node(kabsa::Parser::token::ENUM, 1, $3); }
+	| ENUM IDENTIFIER LEFT_BRACES enum_list RIGHT_BRACES { $$ = create_operation_node(kabsa::Parser::token::ENUM, 2, $4, create_identifier_node(*driver.location_, $2, ENUM_SPECIFIER)); }
+	| ENUM IDENTIFIER LEFT_BRACES RIGHT_BRACES { $$ = create_operation_node(kabsa::Parser::token::ENUM, 0); }
 	;
 
 enum_list
-	: IDENTIFIER
-	| enum_list COMMA IDENTIFIER
-	; */
+	: IDENTIFIER { $$ = create_identifier_node(*driver.location_, $1, ENUM_TYPE); }
+	| enum_list COMMA IDENTIFIER { $$ = create_operation_node(kabsa::Parser::token::COMMA, 2, $1, create_identifier_node(*driver.location_, $3, ENUM_TYPE)); }
+	;
 
 boolean_expression
 	: TRUE { $$ = create_integer_number_node(1); }
@@ -456,6 +457,29 @@ namespace kabsa
 							}
 						}
 						assembly_ss << 'L' << std::setfill('0') << std::setw(4) << break_label << ':' << std::endl;
+					} break;
+					case kabsa::Parser::token::ENUM: {
+						if (operation_node->getNumberOfOperands() > 0) {
+							std::vector<IdentifierNode *> enumerator_nodes;
+							int enum_value = 0;
+							OperationNode *enum_list_op_node = dynamic_cast<OperationNode *>(operation_node->getOperandNode(0));
+							Node *backup_node = operation_node->getOperandNode(0);
+							while (enum_list_op_node != NULL) {
+								enumerator_nodes.push_back(dynamic_cast<IdentifierNode *>(enum_list_op_node->getOperandNode(1)));
+								backup_node = enum_list_op_node->getOperandNode(0);
+								enum_list_op_node = dynamic_cast<OperationNode *>(backup_node);
+							}
+							if (enum_list_op_node == NULL) {
+								IdentifierNode *enum_list_id_node = dynamic_cast<IdentifierNode *>(backup_node);
+								if (enum_list_id_node != NULL) {
+									enumerator_nodes.push_back(enum_list_id_node);
+								}
+							}
+							std::reverse(enumerator_nodes.begin(), enumerator_nodes.end());
+							for(IdentifierNode *enumerator_node : enumerator_nodes) {
+								generate(create_operation_node(kabsa::Parser::token::ASSIGN, 2, enumerator_node, create_integer_number_node(enum_value++)));
+							}
+						}
 					} break;
                     default:
                         generate(operation_node->getOperandNode(0));
