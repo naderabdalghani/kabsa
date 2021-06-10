@@ -91,6 +91,7 @@ statement
 	: SEMICOLON { $$ = create_operation_node(kabsa::Parser::token::SEMICOLON, 2, NULL, NULL); }
 	| expression SEMICOLON { $$ = $1; }
 	| RETURN expression SEMICOLON { $$ = create_operation_node(kabsa::Parser::token::RETURN, 1, $2); }
+	| RETURN SEMICOLON { $$ = create_operation_node(kabsa::Parser::token::RETURN, 0); }
 	| assignment SEMICOLON
 	| CONSTANT IDENTIFIER ASSIGN expression SEMICOLON { $$ = create_operation_node(kabsa::Parser::token::ASSIGN, 2, create_identifier_node($2, CONSTANT_TYPE), $4); }
 	| WHILE LEFT_PARENTHESIS boolean_expression RIGHT_PARENTHESIS statement { $$ = create_operation_node(kabsa::Parser::token::WHILE, 2, $3, $5); }
@@ -313,7 +314,9 @@ namespace kabsa
 						std::cout << "\tENDP\t" << function_identifier_node->getKey() << std::endl;
 					} break;
 					case kabsa::Parser::token::RETURN: {
-						generate(operation_node->getOperandNode(0));
+						if (operation_node->getNumberOfOperands() > 0) {
+							generate(operation_node->getOperandNode(0));
+						}
 						std::cout << "\tRET" << std::endl;
 					} break;
 					case kabsa::Parser::token::CALL: {
