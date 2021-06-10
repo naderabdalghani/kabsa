@@ -16,7 +16,6 @@ int main(int argc, char *argv[]) {
     }
     std::string input_path = argv[1];
     std::string output_path = argv[2];
-    std::cout<<argc<<std::endl;
     std::string filename = get_filename(input_path);
     kabsa::Driver driver(input_path, output_path, filename);
     driver.parse_file(input_path);

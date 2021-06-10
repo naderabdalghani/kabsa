@@ -1,4 +1,5 @@
 import os
+import subprocess
 import tkinter as tk
 from tkinter import filedialog, messagebox
 
@@ -47,6 +48,13 @@ class GUI(tk.Tk):
         if not os.path.isdir(self.output_filepath.get()):
             messagebox.showerror('Error', 'Invalid output file directory specified.')
             return
+        if not os.path.exists("compilers.exe"):
+            messagebox.showerror('Error', 'compilers.exe file is not exists in the same directory of \"gui.py\"')
+            return
+        commands = ".\compilers.exe" + " \"\'" + str(self.input_filename.get()) + "\'\"" + " \"\'" + str(self.output_filepath.get()) + "\'\""
+        subprocess.call('%SYSTEMROOT%\System32\WindowsPowerShell/v1.0/powershell.exe -Command ' + str(commands), shell=True)
+        messagebox.showinfo("Success","Assembly file created successfully at:" + str(" \"" + str(self.output_filepath.get()) + "\"") + ", with name: " + 
+        str( os.path.basename(self.input_filename.get()).split('.')[0] + ".asm"))
 
 
 def main():

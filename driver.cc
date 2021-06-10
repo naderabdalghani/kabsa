@@ -39,7 +39,7 @@ namespace kabsa {
         }
         outfile<< ss.rdbuf();
         outfile.close();
-        std::cout<< "Assembly file created at: \""<< output_directory << "\", with name: " << filename << ".asm" << std::endl;
+        std::cout<< "Assembly file created at: \""<< output_directory << "\", with name: \"" << filename << ".asm\"" << std::endl;
         return true;
     }
 }
