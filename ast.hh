@@ -3,7 +3,7 @@
 
 
 namespace kabsa {
-    typedef enum { CONSTANT_TYPE, VARIABLE_TYPE, FUNCTION_TYPE, FUNCTION_PARAMETER_TYPE } identifierEnum;
+    typedef enum { CONSTANT_TYPE, VARIABLE_TYPE, FUNCTION_TYPE, FUNCTION_PARAMETER_TYPE, ENUM_TYPE, ENUM_SPECIFIER } identifierEnum;
     typedef enum { NUMBER_TYPE, IDENTIFIER_TYPE, OPERATION_TYPE } nodeEnum;
 
     class Node {
