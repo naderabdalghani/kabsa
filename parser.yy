@@ -27,7 +27,6 @@
 		Node *get_identifier_node(const location& l, std::string key, std::vector<identifierEnum> valid_identifier_types);
 		Node *create_operation_node(int operation_token, int num_of_operands, ...);
 		void generate(Node *node);
-		void free_node(Node *node);
 		bool isValidType(identifierEnum identifier_type, std::vector<identifierEnum> valid_identifier_types);
 		static int last_used_label = 0;
 		static std::stringstream assembly_ss;
@@ -87,7 +86,7 @@ main_program
 
 program
 	: %empty {}
-	| program function_declaration { generate($2); free_node($2);}
+	| program function_declaration { generate($2); }
 	;
 
 function_declaration
@@ -247,12 +246,10 @@ namespace kabsa
 		switch(identifier_type) {
 			case CONSTANT_TYPE:
 				return "constant variable";
-			case VARIABLE_TYPE:
-				return "variable";
 			case FUNCTION_TYPE:
 				return "function";
 			default:
-				return "";
+				return "variable";
 		}
 	}
 
@@ -262,9 +259,14 @@ namespace kabsa
 			IdentifierNode *node = iterator->second;
 			if (not isValidType(node->getIdentifierType(), valid_identifier_types)) {
 				std::string valid_types_as_strings;
-				std::string separator = " or ";
+				std::string separator = " or as a ";
+				std::string last_variable_type_string = "";
 				for(identifierEnum valid_type : valid_identifier_types) {
-					valid_types_as_strings = valid_types_as_strings + identifierTypeAsString(valid_type) + separator;
+					std::string type_string = identifierTypeAsString(valid_type);
+					if (last_variable_type_string != type_string) {
+						valid_types_as_strings = valid_types_as_strings + type_string + separator;
+					}
+					last_variable_type_string = type_string;
 				}
 				valid_types_as_strings = valid_types_as_strings.substr(0, valid_types_as_strings.length() - separator.length());
 				std::cerr << l << ": " << "Cannot use " << identifierTypeAsString(node->getIdentifierType()) << " as a " << valid_types_as_strings << std::endl; exit(1);
@@ -472,15 +474,5 @@ namespace kabsa
                 }
 			} break;
         }
-    }
-
-    void free_node(Node *node) {
-        if (!node) return;
-        if (node->getNodeType() == OPERATION_TYPE) {
-			OperationNode *operation_node = dynamic_cast<OperationNode *>(node);
-            for (int i = 0; i < operation_node->getNumberOfOperands(); i++)
-                free_node(operation_node->getOperandNode(i));
-        }
-        delete node;
     }
 }
