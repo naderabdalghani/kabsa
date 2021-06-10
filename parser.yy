@@ -16,13 +16,14 @@
 	#include "location.hh"
 	#include <string>
 	#include <sstream>
+	#include <algorithm>
 
 	namespace kabsa {
 		Node *create_integer_number_node(int value);
 		Node *create_double_number_node(double value);
 		Node *create_identifier_node(std::string key, identifierEnum identifier_type = VARIABLE_TYPE);
 		Node *create_operation_node(int operation_token, int num_of_operands, ...);
-		void generate(Node *node);
+		void generate(Node *node, int break_label=-1);
 		void free_node(Node *node);
 		static int last_used_label = 0;
 		static std::stringstream assembly_ss;
@@ -59,7 +60,7 @@
 %token <int> INTEGER TRUE FALSE
 %token <double> DOUBLE
 %token <std::string> IDENTIFIER
-%nterm <Node *> main_program program statements statement expression boolean_expression arguments enum_specifier enum_list enumerator assignment parameters function function_call
+%nterm <Node *> main_program program statements statement expression boolean_expression arguments enum_specifier enum_list enumerator assignment parameters function function_call constant_expression labeled_statement labeled_statements
 
 %nonassoc IFX
 %nonassoc ELSE
@@ -99,7 +100,7 @@ statement
 	| IF LEFT_PARENTHESIS boolean_expression RIGHT_PARENTHESIS statement %prec IFX { $$ = create_operation_node(kabsa::Parser::token::IF, 2, $3, $5); }
 	| IF LEFT_PARENTHESIS boolean_expression RIGHT_PARENTHESIS statement ELSE statement { $$ = create_operation_node(kabsa::Parser::token::IF, 3, $3, $5, $7); }
 	| FOR LEFT_PARENTHESIS assignment SEMICOLON boolean_expression SEMICOLON assignment RIGHT_PARENTHESIS statement { $$ = create_operation_node(kabsa::Parser::token::FOR, 4, $3, $5, $7, $9); }
-	| SWITCH LEFT_PARENTHESIS expression RIGHT_PARENTHESIS LEFT_BRACES labeled_statement RIGHT_BRACES {}
+	| SWITCH LEFT_PARENTHESIS expression RIGHT_PARENTHESIS LEFT_BRACES labeled_statements RIGHT_BRACES { $$ = create_operation_node(kabsa::Parser::token::SWITCH, 2, $3, $6); }
 	| LEFT_BRACES statements RIGHT_BRACES { $$ = $2; }
 	;
 
@@ -144,14 +145,19 @@ expression
 
 labeled_statements
 	: labeled_statement
-	| labeled_statements labeled_statement
+	| labeled_statements labeled_statement { $$ = create_operation_node(kabsa::Parser::token::SEMICOLON, 2, $1, $2); }
 	;
 
 labeled_statement
-	: CASE expression COLON statement
-	| BREAK SEMICOLON
-	| DEFAULT COLON statement
-	| LEFT_BRACES labeled_statements RIGHT_BRACES
+	: CASE constant_expression COLON statement { $$ = create_operation_node(kabsa::Parser::token::CASE, 2, $2, $4); }
+	| DEFAULT COLON statement { $$ = create_operation_node(kabsa::Parser::token::DEFAULT, 1, $3); }
+	| DEFAULT COLON { $$ = create_operation_node(kabsa::Parser::token::DEFAULT, 0); }
+	| BREAK SEMICOLON { $$ = create_operation_node(kabsa::Parser::token::BREAK, 0); }
+	;
+
+constant_expression
+	: INTEGER { $$ = create_integer_number_node($1); }
+	| IDENTIFIER { $$ = create_identifier_node($1); }
 	;
 
 enum_specifier
@@ -221,7 +227,7 @@ namespace kabsa
         return node;
     }
 
-    void generate(Node *node) {
+    void generate(Node *node, int break_label) {
         int label_1, label_2;
         if (!node) return;
         switch(node->getNodeType()) {
@@ -265,7 +271,6 @@ namespace kabsa
                         generate(operation_node->getOperandNode(0));
 						assembly_ss << "\tJZ\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
 					} break;
-					//FOR LEFT_PARENTHESIS expression SEMICOLON boolean_expression SEMICOLON expression RIGHT_PARENTHESIS statement { $$ = create_operation_node(kabsa::Parser::token::FOR, 4, $3, $5, $7, $9); }
 					case kabsa::Parser::token::FOR: {
 						generate(operation_node->getOperandNode(0));
 						label_1 = last_used_label++;
@@ -324,6 +329,52 @@ namespace kabsa
 					case kabsa::Parser::token::PUSH_ARGS: {
 						generate(operation_node->getOperandNode(1));
                         generate(operation_node->getOperandNode(0));
+					} break;
+					case kabsa::Parser::token::SWITCH: {
+						std::vector<OperationNode *> labeled_statements;
+						std::vector<int> switch_labels;
+						OperationNode *labeled_statement = dynamic_cast<OperationNode *>(operation_node->getOperandNode(1));
+						while (labeled_statement->getOperatorToken() == kabsa::Parser::token::SEMICOLON) {
+							labeled_statements.push_back(dynamic_cast<OperationNode *>(labeled_statement->getOperandNode(1)));
+							labeled_statement = dynamic_cast<OperationNode *>(labeled_statement->getOperandNode(0));
+						}
+						labeled_statements.push_back(labeled_statement);
+						std::reverse(labeled_statements.begin(), labeled_statements.end());
+						for (int i = 0; i < labeled_statements.size(); i++) {
+							switch(labeled_statements[i]->getOperatorToken()) {
+								case kabsa::Parser::token::CASE: {
+									generate(operation_node->getOperandNode(0));
+									generate(labeled_statements[i]->getOperandNode(0));
+									std::cout << "\tCMPEQ" << std::endl;
+									label_1 = last_used_label++;
+									std::cout << "\tJZ\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
+									switch_labels.push_back(label_1);
+								} break;
+							}
+						}
+						label_1 = last_used_label++;
+						std::cout << "\tJMP\tL" << std::setfill('0') << std::setw(4) << label_1 << std::endl;
+						switch_labels.push_back(label_1);
+						int break_label = last_used_label++;
+						int label_index = 0;
+						for (int i = 0; i < labeled_statements.size(); i++) {
+							switch(labeled_statements[i]->getOperatorToken()) {
+								case kabsa::Parser::token::CASE: {
+									std::cout << 'L' << std::setfill('0') << std::setw(4) << switch_labels[label_index++] << ':' << std::endl;
+									generate(labeled_statements[i]->getOperandNode(1));
+								} break;
+								case kabsa::Parser::token::DEFAULT: {
+									std::cout << 'L' << std::setfill('0') << std::setw(4) << switch_labels[label_index++] << ':' << std::endl;
+									if (labeled_statements[i]->getNumberOfOperands() > 0) {
+										generate(labeled_statements[i]->getOperandNode(0));
+									}
+								} break;
+								case kabsa::Parser::token::BREAK: {
+									std::cout << "\tJMP\tL" << std::setfill('0') << std::setw(4) << break_label << std::endl;
+								} break;
+							}
+						}
+						std::cout << 'L' << std::setfill('0') << std::setw(4) << break_label << ':' << std::endl;
 					} break;
                     default:
                         generate(operation_node->getOperandNode(0));
