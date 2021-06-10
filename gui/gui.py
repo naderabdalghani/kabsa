@@ -53,8 +53,8 @@ class GUI(tk.Tk):
             return
         commands = ".\compilers.exe" + " \"\'" + str(self.input_filename.get()) + "\'\"" + " \"\'" + str(self.output_filepath.get()) + "\'\""
         subprocess.call('%SYSTEMROOT%\System32\WindowsPowerShell/v1.0/powershell.exe -Command ' + str(commands), shell=True)
-        messagebox.showinfo("Success","Assembly file created successfully at:" + str(" \"" + str(self.output_filepath.get()) + "\"") + ", with name: " + 
-        str( os.path.basename(self.input_filename.get()).split('.')[0] + ".asm"))
+        # messagebox.showinfo("Success","Assembly file created successfully at:" + str(" \"" + str(self.output_filepath.get()) + "\"") + ", with name: " + 
+        # str( os.path.basename(self.input_filename.get()).split('.')[0] + ".asm"))
 
 
 def main():
