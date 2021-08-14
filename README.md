@@ -39,7 +39,7 @@ Instead of using Bison and Flex C interfaces, or even use the C interfaces and c
 
 #### _if-else statements_
 
-[`if.kabsa`](examples\if.kabsa):
+[`if.kabsa`](examples/if.kabsa):
 
 ```js
 function main() {
@@ -97,7 +97,7 @@ Symbol Table:
 
 #### _Loops_
 
-[`loops.kabsa`](examples\loops.kabsa):
+[`loops.kabsa`](examples/loops.kabsa):
 
 ```js
 function main() {
@@ -199,7 +199,7 @@ Symbol Table:
 
 #### _Expressions_
 
-[`expressions.kabsa`](examples\expressions.kabsa):
+[`expressions.kabsa`](examples/expressions.kabsa):
 
 ```js
 function main() {
@@ -253,7 +253,7 @@ Symbol Table:
 
 #### _Functions_
 
-[`function.kabsa`](examples\function.kabsa):
+[`function.kabsa`](examples/function.kabsa):
 
 ```js
 function sum(x, y) {
@@ -303,7 +303,7 @@ Symbol Table:
 
 #### _Enums_
 
-[`enums.kabsa`](examples\enums.kabsa):
+[`enums.kabsa`](examples/enums.kabsa):
 
 ```js
 function main()
@@ -344,7 +344,7 @@ Symbol Table:
 
 #### _Enums Error_
 
-[`enums-error.kabsa`](examples\enums-error.kabsa):
+[`enums-error.kabsa`](examples/enums-error.kabsa):
 
 ```js
 function main()
@@ -366,7 +366,7 @@ Error Message:
 
 #### _Semantic Errors_
 
-[`semantic-error.kabsa`](examples\semantic-error.kabsa):
+[`semantic-error.kabsa`](examples/semantic-error.kabsa):
 
 ```js
 function main() {
@@ -384,7 +384,7 @@ Error Message:
 
 #### _Syntax Errors_
 
-[`syntax-error.kabsa`](examples\syntax-error.kabsa):
+[`syntax-error.kabsa`](examples/syntax-error.kabsa):
 
 ```js
 function main()
