@@ -454,9 +454,8 @@ Error Message:
 - Run the following commands to compile a compiler executable:
 
   - `win_bison -d parser.yy`
-
-    - `win_flex scanner.l`
-    - `g++ -I C:\win_flex_bison-2.5.24 main.cc driver.cc lex.kabsa.cc parser.tab.cc`
+  - `win_flex scanner.l`
+  - `g++ -I C:\win_flex_bison-2.5.24 main.cc driver.cc lex.kabsa.cc parser.tab.cc`
 
     Where `win_flex_bison-2.5.24` is the name of the winflexbison directory in the C drive
 
